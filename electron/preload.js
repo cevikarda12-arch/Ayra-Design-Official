@@ -5,5 +5,6 @@ contextBridge.exposeInMainWorld('ayraDesktop', {
   getServer: () => ipcRenderer.invoke('ayra:getServer'),
   setServer: (url) => ipcRenderer.invoke('ayra:setServer', url),
   notify: (title, body) => ipcRenderer.send('ayra:notify', { title, body }),
+  setTitleBar: (color, symbolColor) => ipcRenderer.send('ayra:titlebar', { color, symbolColor }),
   platform: process.platform,
 });

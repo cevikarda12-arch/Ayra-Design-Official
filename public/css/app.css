@@ -475,3 +475,19 @@ input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px;
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* ---------------------------------------------------------------- masaüstü: çerçevesiz pencere */
+.drag-strip { display: none; }
+html.desktop .drag-strip { display: block; position: absolute; top: 0; left: 0; right: 0; height: 40px; z-index: 50; -webkit-app-region: drag; }
+html.desktop .intro { -webkit-app-region: drag; }
+html.desktop .intro-skip { -webkit-app-region: no-drag; }
+html.desktop .auth { position: fixed; }
+html.desktop .server-btn { top: 70px; z-index: 60; -webkit-app-region: no-drag; }
+html.desktop .topbar { -webkit-app-region: drag; background: var(--panel); backdrop-filter: none; padding-right: 150px; }
+html.desktop .topbar button, html.desktop .topbar input, html.desktop .search-trigger, html.desktop .me-btn,
+html.desktop .online-stack, html.desktop #timerChip, html.desktop .crumbs { -webkit-app-region: no-drag; }
+html.desktop .sb-head { -webkit-app-region: drag; }
+html.desktop .modal-back, html.desktop .cmdk, html.desktop .dropdown, html.desktop .notif-panel, html.desktop .toasts, html.desktop .toast { -webkit-app-region: no-drag; }
+html.desktop.plat-darwin .topbar { padding-right: 20px; }
+html.desktop.plat-darwin .sb-head { padding-top: 46px; }
+html.desktop.plat-darwin .auth-art { padding-top: 60px; }

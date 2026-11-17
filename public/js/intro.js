@@ -77,12 +77,13 @@
     return new Promise((resolve) => {
       const intro = document.getElementById('intro');
       if (skipAnim) { intro.remove(); return resolve(); }
+      A.syncTitleBar && A.syncTitleBar();
       const stop = A.particles(document.getElementById('introCanvas'), { count: 140, converge: true, links: true });
       let done = false;
       const finish = () => {
         if (done) return; done = true;
         intro.classList.add('out');
-        setTimeout(() => { stop(); intro.remove(); }, 1000);
+        setTimeout(() => { stop(); intro.remove(); A.syncTitleBar && A.syncTitleBar(); }, 1000);
         setTimeout(resolve, 350);
       };
       document.getElementById('introSkip').onclick = finish;

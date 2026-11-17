@@ -7,6 +7,7 @@
     A.$('#app').classList.add('hidden');
     root.classList.remove('hidden');
     root.innerHTML = `
+      <div class="drag-strip"></div>
       <div class="auth-art">
         <canvas></canvas>
         <div class="auth-floating" style="top:12%;left:10%">${A.icon('check-circle-2')}<div><b>Prototip teslim edildi</b><div class="muted small">Görev Panosu · az önce</div></div></div>
@@ -31,6 +32,7 @@
     const srv = A.$('#srvBtn', root);
     if (srv) srv.onclick = serverDialog;
     renderCard(mode, msg);
+    A.syncTitleBar();
   };
 
   A.hideAuth = function () {

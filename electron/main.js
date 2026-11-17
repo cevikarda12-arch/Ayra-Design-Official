@@ -6,6 +6,7 @@ const fs = require('fs');
 
 const ICON = path.join(__dirname, '..', 'build', 'icon.png');
 let win = null;
+const TITLEBAR_H = 60;
 let localServer = null;
 let localUrl = null;
 
@@ -46,6 +47,11 @@ async function createWindow() {
     icon: fs.existsSync(ICON) ? nativeImage.createFromPath(ICON) : undefined,
     show: false,
     autoHideMenuBar: true,
+    // Windows'un beyaz başlık çubuğunu kaldır; pencere düğmeleri uygulamanın üst barına gömülür
+    titleBarStyle: 'hidden',
+    ...(process.platform === 'darwin'
+      ? { trafficLightPosition: { x: 18, y: 22 } }
+      : { titleBarOverlay: { color: '#0b0c10', symbolColor: '#e9e9f0', height: TITLEBAR_H } }),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -99,6 +105,13 @@ ipcMain.handle('ayra:setServer', async (e, url) => {
   writeConfig(cfg);
   if (win) win.loadURL(await targetUrl());
   return true;
+});
+ipcMain.on('ayra:titlebar', (e, { color, symbolColor }) => {
+  try {
+    if (win && process.platform !== 'darwin' && win.setTitleBarOverlay) {
+      win.setTitleBarOverlay({ color: String(color || '#0b0c10'), symbolColor: String(symbolColor || '#e9e9f0'), height: TITLEBAR_H });
+    }
+  } catch {}
 });
 ipcMain.on('ayra:notify', (e, { title, body }) => {
   try {

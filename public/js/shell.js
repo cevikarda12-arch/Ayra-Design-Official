@@ -45,6 +45,7 @@
     renderProject();
     renderOnline();
     A.renderTimerChip && A.renderTimerChip();
+    A.syncTitleBar();
   };
 
   function renderNav() {
@@ -126,6 +127,7 @@
       document.documentElement.style.setProperty('--accent-2', shade(accent, -18));
       document.documentElement.style.setProperty('--accent-soft', hexA(accent, 0.16));
     }
+    A.syncTitleBar();
   };
   function hexA(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; }
   function shade(hex, p) { const n = parseInt(hex.slice(1), 16); const f = (c) => Math.max(0, Math.min(255, Math.round(c + (p / 100) * 255))); return '#' + [f(n >> 16), f((n >> 8) & 255), f(n & 255)].map((x) => x.toString(16).padStart(2, '0')).join(''); }

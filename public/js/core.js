@@ -9,6 +9,23 @@
     order: [],
   });
 
+  // ------------------------------------------------------------------ desktop (çerçevesiz pencere)
+  A.desktop = !!window.ayraDesktop;
+  if (A.desktop) document.documentElement.classList.add('desktop', 'plat-' + (window.ayraDesktop.platform || 'win32'));
+  // Pencere düğmelerinin arka planını o an görünen yüzeyle eşleştir
+  A.syncTitleBar = () => {
+    if (!A.desktop || !window.ayraDesktop.setTitleBar) return;
+    requestAnimationFrame(() => {
+      const cs = getComputedStyle(document.documentElement);
+      const inApp = !document.getElementById('app').classList.contains('hidden') && !document.getElementById('intro');
+      const authVisible = !document.getElementById('auth').classList.contains('hidden');
+      let color = cs.getPropertyValue(inApp ? '--panel' : '--bg').trim() || '#0b0c10';
+      if (document.getElementById('intro')) color = '#0e0d18';
+      else if (authVisible) color = cs.getPropertyValue('--bg').trim();
+      window.ayraDesktop.setTitleBar(color, cs.getPropertyValue('--text').trim() || '#e9e9f0');
+    });
+  };
+
   // ------------------------------------------------------------------ storage
   A.ls = {
     get(k, d = null) { try { const v = localStorage.getItem('ayra.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
