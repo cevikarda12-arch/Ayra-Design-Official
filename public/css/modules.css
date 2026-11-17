@@ -505,10 +505,18 @@ mark { background: rgba(255, 212, 59, .35); color: inherit; border-radius: 3px; 
 .theme-pick button { border: 2px solid var(--line-2); background: var(--panel-2); border-radius: 14px; padding: 8px 8px 10px; cursor: pointer; font-weight: 600; display: flex; flex-direction: column; gap: 8px; align-items: center; transition: border-color .2s, transform .2s var(--spring); }
 .theme-pick button:hover { transform: translateY(-3px); }
 .theme-pick button.on { border-color: var(--accent); }
-.tp-prev { width: 140px; height: 86px; border-radius: 9px; padding: 8px; display: grid; grid-template-columns: 30px 1fr; gap: 6px; }
-.tp-prev i { border-radius: 5px; }
+.tp-prev { width: 130px; height: 80px; border-radius: 9px; padding: 8px; display: grid; grid-template-columns: 28px 1fr; grid-template-rows: 1fr 8px; gap: 6px; position: relative; box-shadow: inset 0 0 0 1px rgba(127,127,127,.2); }
+.tp-prev i { border-radius: 5px; position: relative; }
 .tp-prev i:first-child { grid-row: span 2; }
-.tp-prev b { height: 8px; border-radius: 4px; align-self: end; }
+.tp-prev i s { position: absolute; left: 8px; right: 30%; top: 10px; height: 4px; border-radius: 2px; opacity: .7; }
+.tp-prev b { height: 8px; border-radius: 4px; width: 60%; }
+.tp-prev u { position: absolute; right: 12px; top: 14px; width: 14px; height: 14px; border-radius: 50%; }
+.theme-pick button { font-size: 13px; }
+.theme-pick button svg.lucide { width: 14px; height: 14px; vertical-align: -2px; }
+.theme-editor { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.te-row { display: flex; gap: 12px; align-items: center; padding: 10px; border-radius: var(--r-sm); background: var(--panel-2); border: 1px solid var(--line); cursor: pointer; }
+.te-row input[type=color] { width: 44px; height: 44px; }
+.radius-demo { width: 34px; height: 34px; border: 2px solid var(--accent); border-radius: var(--r-sm); display: inline-block; }
 .pref-row { display: flex; align-items: center; gap: 16px; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
 .pw-meter { height: 6px; border-radius: 6px; background: var(--panel-3); overflow: hidden; }
 .pw-meter i { display: block; height: 100%; transition: width .3s, background .3s; }

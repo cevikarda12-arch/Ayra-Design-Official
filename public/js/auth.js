@@ -81,7 +81,7 @@
     }
     const reg = mode === 'register';
     card.innerHTML = `
-      <div class="auth-brand"><img src="img/icon.svg" alt=""><div><b>AYRA</b><small>design</small></div></div>
+      <div class="auth-brand"><span class="logo-mark"></span><span class="logo-word" role="img" aria-label="Ayra Design"></span></div>
       <h3>${reg ? 'Ekibe katıl ✨' : 'Tekrar hoş geldin 👋'}</h3>
       <p class="sub">${reg ? 'Başvurun yönetici onayından sonra aktifleşir.' : 'Stüdyoya giriş yap ve tasarlamaya devam et.'}</p>
       <div class="auth-tabs ${reg ? 'reg' : ''}"><i class="pill"></i><button data-m="login" class="${reg ? '' : 'on'}">Giriş Yap</button><button data-m="register" class="${reg ? 'on' : ''}">Kayıt Ol</button></div>

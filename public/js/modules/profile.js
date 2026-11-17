@@ -10,7 +10,7 @@
       el.innerHTML = `<div class="profile-hero"><div class="ph-bg" style="background:linear-gradient(120deg, ${A.esc(u.avatarColor)}, var(--accent-2), transparent)"></div>
           <div class="ph-av" id="phAv">${A.avatar(u, 'xl')}<button class="btn icon sm" id="avBtn" title="Fotoğraf yükle">${A.icon('image')}</button></div>
           <div><h1 style="margin:0">${A.esc(u.displayName)}</h1><div class="muted">@${A.esc(u.username)} · ${A.esc(u.title || '')} · ${A.roleBadge(u.role)}</div></div></div>
-        <div class="tabs">${[['profile', 'user', 'Profil'], ['look', 'palette', 'Görünüm'], ['security', 'lock', 'Güvenlik'], ['stats', 'bar-chart-3', 'İstatistiklerim']].map(([k, ic, l]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${A.icon(ic)} ${l}</button>`).join('')}</div>
+        <div class="tabs">${[['profile', 'user', 'Profil'], ['look', 'palette', 'Görünüm'], ...(A.desktop ? [['app', 'monitor', 'Uygulama']] : []), ['security', 'lock', 'Güvenlik'], ['stats', 'bar-chart-3', 'İstatistiklerim']].map(([k, ic, l]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${A.icon(ic)} ${l}</button>`).join('')}</div>
         <div id="pfBody" style="max-width:820px"></div>`;
       A.icons(el);
       A.$$('.tabs button', el).forEach((b) => (b.onclick = () => { A.$$('.tabs button', el).forEach((x) => x.classList.toggle('on', x === b)); history.replaceState(null, '', '#/profile/' + b.dataset.t); show(b.dataset.t); }));
@@ -24,8 +24,8 @@
         A.route();
       };
       const body = A.$('#pfBody', el);
-      const show = (t) => { body.innerHTML = ''; ({ profile, look, security, stats })[t](body); A.icons(body); };
-      show(['profile', 'look', 'security', 'stats'].includes(tab) ? tab : 'profile');
+      const show = (t) => { body.innerHTML = ''; ({ profile, look, security, stats, app: appTab })[t](body); A.icons(body); };
+      show(['profile', 'look', 'security', 'stats', ...(A.desktop ? ['app'] : [])].includes(tab) ? tab : 'profile');
     },
   });
 
@@ -72,33 +72,97 @@
   }
 
   function look(b) {
-    const p = A.state.user.prefs || {};
-    const theme = p.theme || 'dark';
-    b.innerHTML = `<div class="card"><div class="label" style="margin-bottom:10px">Tema</div>
-      <div class="theme-pick">${[['dark', 'Koyu', '#0b0c10', '#151821'], ['light', 'Açık', '#f4f3fa', '#ffffff'], ['midnight', 'Gece Yarısı', '#05060a', '#0c0f1a']].map(([k, l, a, c]) => `<button data-th="${k}" class="${theme === k ? 'on' : ''}"><div class="tp-prev" style="background:${a}"><i style="background:${c}"></i><i style="background:${c}"></i><b style="background:var(--accent)"></b></div>${l}</button>`).join('')}</div>
-      <div class="label" style="margin:20px 0 10px">Vurgu rengi</div>
-      <div class="color-dots" id="lkAcc">${ACCENTS.map((c) => `<button data-c="${c}" style="background:${c};width:32px;height:32px" class="${(p.accent || '#9b87f5') === c ? 'on' : ''}"></button>`).join('')}<input type="color" id="lkCustom" value="${A.esc(p.accent || '#9b87f5')}"></div>
-      <div class="label" style="margin:22px 0 10px">Tercihler</div>
-      <label class="pref-row"><div><b>Açılış animasyonu</b><div class="small muted">Uygulama açılırken Ayra Design animasyonunu göster</div></div><label class="switch"><input type="checkbox" id="lkIntro" ${p.intro !== false ? 'checked' : ''}><span></span></label></label>
-      <label class="pref-row"><div><b>Arayüz sesleri</b><div class="small muted">Bildirim ve etkileşim sesleri</div></div><label class="switch"><input type="checkbox" id="lkSnd" ${p.sounds !== false ? 'checked' : ''}><span></span></label></label>
-      <label class="pref-row"><div><b>Kompakt menü</b><div class="small muted">Kenar menüsünü daraltılmış başlat</div></div><label class="switch"><input type="checkbox" id="lkCol" ${A.ls.get('collapsed') ? 'checked' : ''}><span></span></label></label>
-      <button class="btn sm" id="lkReplay" style="margin-top:10px">${A.icon('play')} Açılış animasyonunu şimdi oynat</button></div>`;
-    A.$$('[data-th]', b).forEach((x) => (x.onclick = async () => { A.applyTheme(x.dataset.th); await A.savePrefs({ theme: x.dataset.th }); A.$$('[data-th]', b).forEach((y) => y.classList.toggle('on', y === x)); }));
-    const setAcc = async (c) => { A.applyTheme(document.documentElement.dataset.theme, c); await A.savePrefs({ accent: c }); A.$$('#lkAcc button', b).forEach((y) => y.classList.toggle('on', y.dataset.c === c)); };
-    A.$$('#lkAcc button', b).forEach((x) => (x.onclick = () => setAcc(x.dataset.c)));
-    A.$('#lkCustom', b).onchange = (e) => setAcc(e.target.value);
-    A.$('#lkIntro', b).onchange = (e) => { A.savePrefs({ intro: e.target.checked }); A.ls.set('intro', e.target.checked); };
-    A.$('#lkSnd', b).onchange = (e) => A.savePrefs({ sounds: e.target.checked });
-    A.$('#lkCol', b).onchange = (e) => { A.ls.set('collapsed', e.target.checked); A.$('#app').classList.toggle('collapsed', e.target.checked); };
-    A.$('#lkReplay', b).onclick = () => {
-      if (document.getElementById('intro')) return;
-      document.body.appendChild(A.h(`<div id="intro" class="intro">${introMarkup()}</div>`));
-      A.sound('whoosh');
-      A.playIntro(false);
+    let p = { ...(A.state.user.prefs || {}) };
+    const cur = () => p.theme || 'dark';
+    const base = () => A.THEMES[cur()] || A.THEMES.dark;
+    let custom = { ...(p.customTheme || { ...A.THEMES.dark, name: 'Özel tema' }) };
+    let pend = {};
+    const flush = A.debounce(() => { const x = pend; pend = {}; A.savePrefs(x); }, 400);
+    const save = (patch) => { Object.assign(pend, patch); flush(); };
+    const apply = (patch, persist = true) => { p = { ...p, ...patch }; A.applyAppearance(p); if (persist) save(patch); };
+    const prev = (t) => `<div class="tp-prev" style="background:${t.bg}"><i style="background:${t.panel}"></i><i style="background:${t.panel}"><s style="background:${t.text}"></s></i><b style="background:${t.accent}"></b><u style="background:${t.accent2}"></u></div>`;
+    const draw = () => {
+      const isCustom = cur() === 'custom';
+      b.innerHTML = `<div class="card"><div class="card-title">${A.icon('palette')} Hazır temalar</div>
+        <div class="theme-pick">${Object.entries(A.THEMES).map(([k, t]) => `<button data-th="${k}" class="${cur() === k ? 'on' : ''}">${prev(t)}${A.esc(t.name)}</button>`).join('')}
+          <button data-th="custom" class="${isCustom ? 'on' : ''}">${prev(custom)}${A.icon('wand-2')} Özel tema</button></div>
+        ${!isCustom ? `<div class="label" style="margin:20px 0 10px">Vurgu rengi</div>
+        <div class="color-dots" id="lkAcc">${[base().accent, ...ACCENTS.filter((c) => c !== base().accent)].map((c) => `<button data-c="${c}" style="background:${c};width:32px;height:32px" class="${(p.accent || base().accent) === c ? 'on' : ''}"></button>`).join('')}<input type="color" id="lkCustom" value="${A.esc(p.accent || base().accent)}" title="Kendi rengini seç"></div>` : ''}
+      </div>
+      ${isCustom ? `<div class="card" style="margin-top:16px"><div class="card-title">${A.icon('wand-2')} Özel tema editörü <span class="small muted">— değişiklikler anında uygulanır</span></div>
+        <div class="seg" style="margin-bottom:14px"><button data-base="dark" class="${custom.base !== 'light' ? 'on' : ''}">${A.icon('moon')} Koyu taban</button><button data-base="light" class="${custom.base === 'light' ? 'on' : ''}">${A.icon('sun')} Açık taban</button></div>
+        <div class="theme-editor">${[['bg', 'Arka plan'], ['panel', 'Paneller / kartlar'], ['text', 'Yazı'], ['accent', 'Ana vurgu'], ['accent2', 'İkinci vurgu']].map(([k, l]) => `<label class="te-row"><input type="color" data-k="${k}" value="${A.esc(custom[k])}"><div><b>${l}</b><div class="small muted mono">${A.esc(custom[k])}</div></div></label>`).join('')}</div>
+        <div class="row wrap" style="margin-top:14px;gap:8px"><span class="small muted">Bir temadan başla:</span>${Object.entries(A.THEMES).map(([k, t]) => `<button class="btn xs" data-from="${k}"><i style="width:10px;height:10px;border-radius:50%;background:${t.accent};display:inline-block"></i>${A.esc(t.name)}</button>`).join('')}
+          <button class="btn xs" id="teRand">${A.icon('shuffle')} Rastgele</button></div>
+        <div class="row" style="margin-top:12px;gap:8px"><button class="btn sm" id="teCopy">${A.icon('copy')} Tema kodunu kopyala</button><button class="btn sm" id="tePaste">${A.icon('clipboard-list')} Tema kodu yapıştır</button></div>
+      </div>` : ''}
+      <div class="card" style="margin-top:16px"><div class="card-title">${A.icon('sliders-horizontal')} Arayüz</div>
+        <div class="pref-row"><div><b>Köşe yuvarlaklığı</b><div class="small muted">Keskin köşelerden yumuşak hatlara</div></div><div class="row" style="gap:10px"><input type="range" min="0" max="2" step="0.1" id="lkRad" value="${p.radius == null ? 1 : p.radius}"><span class="radius-demo"></span></div></div>
+        ${A.desktop ? `<div class="pref-row"><div><b>Arayüz boyutu</b><div class="small muted">Yazı ve öğelerin büyüklüğü</div></div><div class="row" style="gap:10px"><input type="range" min="0.8" max="1.3" step="0.05" id="lkZoom" value="${p.uiScale || 1}"><b id="lkZoomV" class="small" style="width:44px">%${Math.round((p.uiScale || 1) * 100)}</b></div></div>` : ''}
+        <label class="pref-row"><div><b>Animasyonlar</b><div class="small muted">Geçiş ve hareket efektleri</div></div><label class="switch"><input type="checkbox" id="lkAnim" ${p.animations !== false ? 'checked' : ''}><span></span></label></label>
+        <label class="pref-row"><div><b>Açılış animasyonu</b><div class="small muted">Uygulama açılırken Ayra Design animasyonunu göster</div></div><label class="switch"><input type="checkbox" id="lkIntro" ${p.intro !== false ? 'checked' : ''}><span></span></label></label>
+        <label class="pref-row"><div><b>Arayüz sesleri</b><div class="small muted">Bildirim ve etkileşim sesleri</div></div><label class="switch"><input type="checkbox" id="lkSnd" ${p.sounds !== false ? 'checked' : ''}><span></span></label></label>
+        <label class="pref-row"><div><b>Kompakt menü</b><div class="small muted">Kenar menüsünü daraltılmış başlat</div></div><label class="switch"><input type="checkbox" id="lkCol" ${A.ls.get('collapsed') ? 'checked' : ''}><span></span></label></label>
+        <div class="row" style="margin-top:12px;gap:8px"><button class="btn sm" id="lkReplay">${A.icon('play')} Açılış animasyonunu oynat</button><button class="btn sm ghost" id="lkReset">${A.icon('refresh-cw')} Varsayılana dön</button></div>
+      </div>`;
+      A.icons(b);
+      A.$$('[data-th]', b).forEach((x) => (x.onclick = () => { apply({ theme: x.dataset.th, accent: null, ...(x.dataset.th === 'custom' ? { customTheme: custom } : {}) }); draw(); }));
+      A.$$('#lkAcc button', b).forEach((x) => (x.onclick = () => { apply({ accent: x.dataset.c }); A.$$('#lkAcc button', b).forEach((y) => y.classList.toggle('on', y === x)); }));
+      const lc = A.$('#lkCustom', b); if (lc) lc.oninput = (e) => apply({ accent: e.target.value });
+      A.$$('[data-k]', b).forEach((x) => (x.oninput = () => { custom[x.dataset.k] = x.value; x.parentElement.querySelector('.mono').textContent = x.value; apply({ customTheme: { ...custom } }); }));
+      A.$$('[data-base]', b).forEach((x) => (x.onclick = () => { custom.base = x.dataset.base; apply({ customTheme: { ...custom } }); draw(); }));
+      A.$$('[data-from]', b).forEach((x) => (x.onclick = () => { custom = { ...A.THEMES[x.dataset.from], name: 'Özel tema' }; apply({ customTheme: { ...custom } }); draw(); }));
+      const rnd = A.$('#teRand', b);
+      if (rnd) rnd.onclick = () => {
+        const h = Math.random() * 360, dark = Math.random() < 0.75;
+        const hsl = (hh, s, l) => { s /= 100; l /= 100; const k = (n) => (n + hh / 30) % 12; const a = s * Math.min(l, 1 - l); const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); return '#' + [f(0), f(8), f(4)].map((x) => Math.round(x * 255).toString(16).padStart(2, '0')).join(''); };
+        custom = { name: 'Özel tema', base: dark ? 'dark' : 'light', bg: hsl(h, 30, dark ? 5 : 96), panel: hsl(h, 25, dark ? 10 : 100), text: hsl(h, 20, dark ? 93 : 12), accent: hsl((h + 30) % 360, 80, dark ? 68 : 50), accent2: hsl((h + 160) % 360, 70, dark ? 55 : 42) };
+        apply({ customTheme: { ...custom } }); draw();
+      };
+      const cp = A.$('#teCopy', b);
+      if (cp) cp.onclick = () => navigator.clipboard.writeText('AYRA-TEMA:' + btoa(JSON.stringify(custom))).then(() => A.toast('Tema kodu kopyalandı — ekip arkadaşlarınla paylaşabilirsin', 'ok'));
+      const ps = A.$('#tePaste', b);
+      if (ps) ps.onclick = async () => {
+        const code = await A.prompt('Tema kodunu yapıştırın', { placeholder: 'AYRA-TEMA:...' });
+        if (!code) return;
+        try { const t = JSON.parse(atob(code.trim().replace(/^AYRA-TEMA:/, ''))); ['bg', 'panel', 'text', 'accent', 'accent2'].forEach((k) => { if (!/^#[0-9a-f]{6}$/i.test(t[k])) throw new Error(); }); custom = { name: 'Özel tema', base: t.base === 'light' ? 'light' : 'dark', bg: t.bg, panel: t.panel, text: t.text, accent: t.accent, accent2: t.accent2 }; apply({ customTheme: { ...custom } }); draw(); A.toast('Tema uygulandı', 'ok'); } catch { A.toast('Geçersiz tema kodu', 'err'); }
+      };
+      A.$('#lkRad', b).oninput = (e) => apply({ radius: Number(e.target.value) });
+      const z = A.$('#lkZoom', b); if (z) z.oninput = (e) => { A.$('#lkZoomV', b).textContent = '%' + Math.round(e.target.value * 100); apply({ uiScale: Number(e.target.value) }); };
+      A.$('#lkAnim', b).onchange = (e) => apply({ animations: e.target.checked });
+      A.$('#lkIntro', b).onchange = (e) => { apply({ intro: e.target.checked }); A.ls.set('intro', e.target.checked); };
+      A.$('#lkSnd', b).onchange = (e) => apply({ sounds: e.target.checked });
+      A.$('#lkCol', b).onchange = (e) => { A.ls.set('collapsed', e.target.checked); A.$('#app').classList.toggle('collapsed', e.target.checked); };
+      A.$('#lkReset', b).onclick = () => { apply({ theme: 'dark', accent: null, radius: 1, uiScale: 1, animations: true }); draw(); A.toast('Varsayılan görünüm geri yüklendi', 'ok'); };
+      A.$('#lkReplay', b).onclick = () => {
+        if (document.getElementById('intro')) return;
+        document.body.appendChild(A.h(`<div id="intro" class="intro">${introMarkup()}</div>`));
+        A.sound('whoosh');
+        A.playIntro(false);
+      };
     };
+    draw();
   }
   function introMarkup() {
-    return `<canvas id="introCanvas"></canvas><div class="intro-center"><svg class="intro-logo" viewBox="0 0 120 120" width="140" height="140"><defs><linearGradient id="ig2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c3b5ff"/><stop offset=".5" stop-color="#9b87f5"/><stop offset="1" stop-color="#20c997"/></linearGradient></defs><polygon class="il-hex" points="60,6 107,33 107,87 60,114 13,87 13,33" fill="none" stroke="url(#ig2)" stroke-width="3"/><path class="il-a" d="M36 88 L60 30 L84 88" fill="none" stroke="url(#ig2)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path class="il-bar" d="M45 68 L75 68" fill="none" stroke="url(#ig2)" stroke-width="7" stroke-linecap="round"/><circle class="il-dot" cx="60" cy="30" r="5" fill="#fff"/></svg><h1 class="intro-title"><span>A</span><span>Y</span><span>R</span><span>A</span></h1><div class="intro-sub">design</div><div class="intro-tag">Oyun Tasarım Stüdyosu</div><div class="intro-bar"><i></i></div></div><button class="intro-skip" id="introSkip">Geç ›</button>`;
+    return A.introHTML;
+  }
+
+  async function appTab(b) {
+    const info = await window.ayraDesktop.appInfo();
+    const st = (u) => ({ idle: 'Henüz denetlenmedi', checking: 'Denetleniyor...', latest: 'En güncel sürümü kullanıyorsunuz ✓', downloading: `v${u.version} indiriliyor... %${u.percent || 0}`, downloaded: `v${u.version} hazır — yeniden başlatınca kurulacak`, error: 'Denetlenemedi: ' + (u.error || ''), dev: 'Geliştirici modunda güncelleme yapılmaz' }[u.state] || '');
+    b.innerHTML = `<div class="card"><div class="card-title">${A.icon('refresh-cw')} Güncellemeler</div>
+        <div class="row wrap" style="gap:14px"><span class="logo-mark" style="height:54px"></span><div class="grow"><b>Ayra Design v${A.esc(info.version)}</b><div class="small muted" id="apSt">${A.esc(st(A.updateState.state !== 'idle' ? A.updateState : info.update))}</div></div>
+        <button class="btn" id="apChk">${A.icon('refresh-cw')} Güncellemeleri denetle</button>${(A.updateState.state === 'downloaded') ? `<button class="btn primary" id="apInst">${A.icon('download')} Şimdi kur</button>` : ''}</div>
+        <p class="small muted" style="margin-bottom:0">Uygulama yeni sürümleri arka planda kendisi indirir; siz uygulamayı kapatıp açtığınızda (veya “Güncelle”ye bastığınızda) kurulur. Silip yeniden indirmenize gerek yok. Verileriniz korunur.</p></div>
+      <div class="card" style="margin-top:16px"><div class="card-title">${A.icon('monitor')} Masaüstü</div>
+        <label class="pref-row"><div><b>Kapatınca arka planda çalış</b><div class="small muted">Pencereyi kapattığınızda uygulama sağ alttaki sistem tepsisine (saatin yanı) küçülür; ekibiniz bağlı kalır. Tamamen kapatmak için simgeye sağ tıklayıp “Çıkış” deyin.</div></div><label class="switch"><input type="checkbox" id="apTray" ${info.closeToTray ? 'checked' : ''}><span></span></label></label>
+        <label class="pref-row"><div><b>Windows açılışında başlat</b><div class="small muted">Bilgisayar açıldığında Ayra Design tepside sessizce başlar.</div></div><label class="switch"><input type="checkbox" id="apLogin" ${info.openAtLogin ? 'checked' : ''}><span></span></label></label></div>`;
+    A.icons(b);
+    A.$('#apChk', b).onclick = () => { window.ayraDesktop.checkUpdates(); A.$('#apSt', b).textContent = 'Denetleniyor...'; };
+    const ins = A.$('#apInst', b); if (ins) ins.onclick = () => window.ayraDesktop.installUpdate();
+    A.$('#apTray', b).onchange = (e) => { window.ayraDesktop.setDesktopPref('closeToTray', e.target.checked); A.toast('Kaydedildi', 'ok'); };
+    A.$('#apLogin', b).onchange = (e) => { window.ayraDesktop.setDesktopPref('openAtLogin', e.target.checked); A.toast('Kaydedildi', 'ok'); };
+    A.viewOn('update', (u) => { const el = A.$('#apSt', b); if (el) el.textContent = st(u); });
   }
 
   function security(b) {

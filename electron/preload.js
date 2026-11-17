@@ -6,5 +6,11 @@ contextBridge.exposeInMainWorld('ayraDesktop', {
   setServer: (url) => ipcRenderer.invoke('ayra:setServer', url),
   notify: (title, body) => ipcRenderer.send('ayra:notify', { title, body }),
   setTitleBar: (color, symbolColor) => ipcRenderer.send('ayra:titlebar', { color, symbolColor }),
+  setZoom: (f) => ipcRenderer.send('ayra:zoom', f),
+  appInfo: () => ipcRenderer.invoke('ayra:appInfo'),
+  checkUpdates: () => ipcRenderer.send('ayra:checkUpdates'),
+  installUpdate: () => ipcRenderer.send('ayra:installUpdate'),
+  setDesktopPref: (key, value) => ipcRenderer.send('ayra:setDesktopPref', { key, value }),
+  onUpdate: (cb) => { const h = (e, st) => cb(st); ipcRenderer.on('ayra:update', h); return () => ipcRenderer.removeListener('ayra:update', h); },
   platform: process.platform,
 });

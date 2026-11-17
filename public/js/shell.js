@@ -12,7 +12,7 @@
     if (A.ls.get('collapsed')) app.classList.add('collapsed');
     app.innerHTML = `
       <aside class="sidebar">
-        <div class="sb-head"><img src="img/icon.svg" alt=""><div class="brand-txt"><b>AYRA</b><small>design</small></div></div>
+        <div class="sb-head"><span class="logo-mark sb-mark"></span><span class="logo-word brand-txt" role="img" aria-label="Ayra Design"></span></div>
         <div class="sb-project" id="projSwitch"></div>
         <nav class="sb-nav" id="nav"></nav>
         <div class="sb-foot">
@@ -26,6 +26,7 @@
           <div class="crumbs" id="crumbs"></div>
           <div class="search-trigger" id="searchBtn">${A.icon('search')}<span>Ara veya komut çalıştır...</span><kbd>Ctrl K</kbd></div>
           <div id="timerChip"></div>
+          <div id="updChip"></div>
           <div class="online-stack" id="onlineStack"></div>
           <button class="btn ghost icon tb-btn" id="notifBtn" title="Bildirimler">${A.icon('bell')}</button>
           <div class="me-btn" id="meBtn"></div>
@@ -45,8 +46,33 @@
     renderProject();
     renderOnline();
     A.renderTimerChip && A.renderTimerChip();
+    A.renderUpdateChip();
     A.syncTitleBar();
   };
+
+  // ---------------------------------------------------------------- masaüstü güncelleme durumu
+  A.updateState = { state: 'idle' };
+  A.renderUpdateChip = () => {
+    const el = A.$('#updChip');
+    if (!el) return;
+    const u = A.updateState;
+    if (u.state === 'downloading') el.innerHTML = `<button class="btn sm upd-chip" title="Yeni sürüm indiriliyor">${A.icon('download')}<span>v${A.esc(u.version || '')} · %${u.percent || 0}</span></button>`;
+    else if (u.state === 'downloaded') el.innerHTML = `<button class="btn sm primary upd-chip ready" id="updGo" title="Yeniden başlat ve güncelle">${A.icon('refresh-cw')}<span>Güncelle</span></button>`;
+    else el.innerHTML = '';
+    A.icons(el);
+    const go = A.$('#updGo', el);
+    if (go) go.onclick = async () => { if (await A.confirm(`Ayra Design v${u.version} kurulacak ve uygulama yeniden başlayacak. Kaydedilmemiş bir işiniz yoksa devam edin.`, { title: 'Güncelleme hazır', ok: 'Yeniden başlat', danger: false })) window.ayraDesktop.installUpdate(); };
+  };
+  if (window.ayraDesktop && window.ayraDesktop.onUpdate) {
+    window.ayraDesktop.onUpdate((st) => {
+      const prev = A.updateState.state;
+      A.updateState = st;
+      A.renderUpdateChip();
+      A.emit('update', st);
+      if (st.state === 'downloaded' && prev !== 'downloaded') A.toast(`Yeni sürüm v${st.version} hazır! Üst bardaki “Güncelle” düğmesiyle kurabilirsiniz.`, 'ok', 'Güncelleme');
+    });
+    window.ayraDesktop.appInfo().then((i) => { A.appInfo = i; if (i.update) { A.updateState = i.update; A.renderUpdateChip(); } }).catch(() => {});
+  }
 
   function renderNav() {
     const nav = A.$('#nav');
@@ -111,26 +137,63 @@
   }
   A.renderOnline = renderOnline;
 
-  function cycleTheme() {
-    const order = ['dark', 'light', 'midnight'];
-    const cur = document.documentElement.dataset.theme || 'dark';
-    const next = order[(order.indexOf(cur) + 1) % order.length];
-    A.applyTheme(next);
-    A.savePrefs({ theme: next });
-    A.toast({ dark: 'Koyu tema', light: 'Açık tema', midnight: 'Gece yarısı teması' }[next] + ' etkin', 'info');
-  }
+  // ---------------------------------------------------------------- tema sistemi
+  A.THEMES = {
+    dark: { name: 'Koyu', base: 'dark', bg: '#0b0c10', panel: '#151821', text: '#e9e9f0', accent: '#9b87f5', accent2: '#20c997' },
+    light: { name: 'Açık', base: 'light', bg: '#f4f3fa', panel: '#ffffff', text: '#1d1b2c', accent: '#7c6ee6', accent2: '#12b886' },
+    midnight: { name: 'Gece Yarısı', base: 'dark', bg: '#05060a', panel: '#0c0f1a', text: '#e6e8ff', accent: '#748ffc', accent2: '#3bc9db' },
+    ocean: { name: 'Okyanus', base: 'dark', bg: '#071521', panel: '#0d2133', text: '#e3f2ff', accent: '#4dabf7', accent2: '#22d3ee' },
+    forest: { name: 'Orman', base: 'dark', bg: '#0b130e', panel: '#132119', text: '#e6f4ea', accent: '#51cf66', accent2: '#fab005' },
+    sunset: { name: 'Gün Batımı', base: 'dark', bg: '#170d12', panel: '#24151c', text: '#ffeef2', accent: '#ff8787', accent2: '#ffa94d' },
+    neon: { name: 'Neon', base: 'dark', bg: '#09001a', panel: '#140629', text: '#f5e9ff', accent: '#e040fb', accent2: '#00e5ff' },
+    coffee: { name: 'Kahve', base: 'dark', bg: '#15100c', panel: '#211913', text: '#f3e9df', accent: '#d4a373', accent2: '#e9c46a' },
+    sakura: { name: 'Sakura', base: 'light', bg: '#fff4f7', panel: '#ffffff', text: '#3a1f2b', accent: '#e64980', accent2: '#ae3ec9' },
+    sand: { name: 'Kum', base: 'light', bg: '#f6f1e7', panel: '#fffdf8', text: '#2e2619', accent: '#c26a2c', accent2: '#2f9e44' },
+  };
+  const hexRgb = (h) => { h = String(h || '#000').replace('#', ''); if (h.length === 3) h = h.split('').map((c) => c + c).join(''); const n = parseInt(h, 16) || 0; return [n >> 16, (n >> 8) & 255, n & 255]; };
+  const rgbHex = (r) => '#' + r.map((x) => Math.round(Math.max(0, Math.min(255, x))).toString(16).padStart(2, '0')).join('');
+  const mix = (a, b, t) => { const x = hexRgb(a), y = hexRgb(b); return rgbHex(x.map((v, i) => v + (y[i] - v) * t)); };
+  const rgba = (h, a) => { const [r, g, b] = hexRgb(h); return `rgba(${r},${g},${b},${a})`; };
+  A.colorMix = mix;
 
-  A.applyTheme = (theme, accent) => {
-    document.documentElement.dataset.theme = theme || 'dark';
-    if (accent) {
-      document.documentElement.style.setProperty('--accent', accent);
-      document.documentElement.style.setProperty('--accent-2', shade(accent, -18));
-      document.documentElement.style.setProperty('--accent-soft', hexA(accent, 0.16));
-    }
+  // Tercihlerden tüm görünümü uygular (tema, vurgu rengi, köşe yuvarlaklığı, boyut, animasyon)
+  A.applyAppearance = (prefs = {}) => {
+    const root = document.documentElement;
+    const custom = prefs.theme === 'custom' && prefs.customTheme ? prefs.customTheme : null;
+    const t = { ...(custom || A.THEMES[prefs.theme] || A.THEMES.dark) };
+    if (prefs.accent && !custom) t.accent = prefs.accent;
+    const dark = t.base !== 'light';
+    const ink = dark ? '#ffffff' : '#140f32';
+    const v = {
+      '--bg': t.bg, '--bg-2': mix(t.bg, t.panel, 0.45), '--panel': t.panel,
+      '--panel-2': mix(t.panel, t.text, dark ? 0.04 : 0.025), '--panel-3': mix(t.panel, t.text, dark ? 0.09 : 0.07),
+      '--line': rgba(ink, dark ? 0.07 : 0.08), '--line-2': rgba(ink, dark ? 0.12 : 0.14),
+      '--text': t.text, '--text-2': mix(t.text, t.bg, 0.28), '--muted': mix(t.text, t.bg, 0.5),
+      '--glass': rgba(t.panel, 0.78), '--accent': t.accent, '--accent-2': mix(t.accent, '#000000', 0.15),
+      '--accent-soft': rgba(t.accent, 0.16), '--mint': t.accent2 || '#20c997',
+      '--logo-1': mix(t.accent, '#ffffff', 0.45), '--logo-2': t.accent2 || '#20c997',
+      '--shadow': dark ? '0 12px 40px rgba(0,0,0,.45)' : '0 12px 40px rgba(40,30,90,.14)',
+      '--shadow-sm': dark ? '0 4px 14px rgba(0,0,0,.3)' : '0 4px 14px rgba(40,30,90,.08)',
+    };
+    const rad = Math.max(0, Math.min(2, prefs.radius == null ? 1 : Number(prefs.radius)));
+    v['--r'] = Math.round(14 * rad) + 'px'; v['--r-sm'] = Math.round(9 * rad) + 'px'; v['--r-lg'] = Math.round(20 * rad) + 'px';
+    Object.entries(v).forEach(([k, val]) => root.style.setProperty(k, val));
+    root.dataset.theme = dark ? (prefs.theme === 'midnight' ? 'midnight' : 'dark') : 'light';
+    root.classList.toggle('no-anim', prefs.animations === false);
+    if (window.ayraDesktop && window.ayraDesktop.setZoom) window.ayraDesktop.setZoom(Number(prefs.uiScale) || 1);
+    A.ls.set('appearance', { theme: prefs.theme, accent: prefs.accent, customTheme: prefs.customTheme, radius: prefs.radius, uiScale: prefs.uiScale, animations: prefs.animations });
     A.syncTitleBar();
   };
-  function hexA(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; }
-  function shade(hex, p) { const n = parseInt(hex.slice(1), 16); const f = (c) => Math.max(0, Math.min(255, Math.round(c + (p / 100) * 255))); return '#' + [f(n >> 16), f((n >> 8) & 255), f(n & 255)].map((x) => x.toString(16).padStart(2, '0')).join(''); }
+  A.applyTheme = (theme, accent) => A.applyAppearance({ ...((A.state.user && A.state.user.prefs) || {}), theme, ...(accent ? { accent } : {}) });
+
+  function cycleTheme() {
+    const order = Object.keys(A.THEMES);
+    const cur = (A.state.user.prefs || {}).theme || 'dark';
+    const next = order[(order.indexOf(cur) + 1) % order.length];
+    A.savePrefs({ theme: next, accent: null }).then(() => { A.applyAppearance(A.state.user.prefs); A.emit('appearance'); });
+    A.toast(A.THEMES[next].name + ' teması etkin', 'info');
+  }
+
   A.savePrefs = async (prefs) => {
     try { const r = await A.put('/api/me', { prefs }); A.state.user = r.user; } catch (e) { A.err(e); }
   };

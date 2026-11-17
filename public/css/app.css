@@ -95,31 +95,21 @@ svg.lucide { width: 18px; height: 18px; stroke-width: 2; flex-shrink: 0; }
 .intro.out { clip-path: circle(0% at 50% 50%); }
 .intro canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .intro-center { position: relative; text-align: center; z-index: 2; }
-.intro-logo { filter: drop-shadow(0 0 30px rgba(155, 135, 245, .6)); animation: logoFloat 3s ease-in-out infinite 2.4s; }
-.il-hex { stroke-dasharray: 340; stroke-dashoffset: 340; animation: draw 1.4s var(--ease) .2s forwards; }
-.il-a { stroke-dasharray: 140; stroke-dashoffset: 140; animation: draw 1s var(--ease) .9s forwards; }
-.il-bar { stroke-dasharray: 32; stroke-dashoffset: 32; animation: draw .5s var(--ease) 1.5s forwards; }
-.il-dot { transform-origin: 60px 30px; transform: scale(0); animation: pop .6s var(--spring) 1.8s forwards; }
+.logo-mark, .logo-word { display: inline-block; flex-shrink: 0; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center; -webkit-mask-size: contain; mask-size: contain; }
+.logo-mark { -webkit-mask-image: url(../img/mark.png); mask-image: url(../img/mark.png); aspect-ratio: 549 / 622; height: 40px; background: linear-gradient(135deg, var(--logo-1, #c3b5ff), var(--accent) 50%, var(--logo-2, var(--mint))); }
+.logo-word { -webkit-mask-image: url(../img/wordmark.png); mask-image: url(../img/wordmark.png); aspect-ratio: 1001 / 338; height: 34px; background: var(--text); }
+.intro-logo { position: relative; width: 150px; margin: 0 auto; }
+.intro-glow { position: absolute; inset: -40%; border-radius: 50%; background: radial-gradient(circle, rgba(155,135,245,.55), transparent 65%); opacity: 0; animation: glowIn 1.6s ease-out .9s forwards, glowPulse 3s ease-in-out 2.5s infinite; }
+.intro-mark { position: relative; height: auto; width: 150px; background: linear-gradient(135deg, #c3b5ff, #9b87f5 45%, #20c997); background-size: 200% 200%; filter: drop-shadow(0 0 30px rgba(155,135,245,.6)); clip-path: polygon(0 100%, 0 100%, 0 100%); animation: markReveal 1.3s cubic-bezier(.7,0,.2,1) .25s forwards, markShift 4s linear 1.6s infinite, logoFloat 3s ease-in-out 2.4s infinite; }
+@keyframes markReveal { 0% { clip-path: polygon(0 100%, 0 100%, 0 100%); transform: scale(.7) rotate(-12deg); } 60% { clip-path: polygon(0 100%, 0 -60%, 160% 100%); } 100% { clip-path: polygon(0 100%, 0 -200%, 300% 100%); transform: none; } }
+@keyframes markShift { 50% { background-position: 100% 100%; } }
+@keyframes glowIn { to { opacity: 1; } }
+@keyframes glowPulse { 50% { transform: scale(1.15); opacity: .7; } }
+@keyframes logoFloat { 50% { transform: translateY(-8px); } }
 @keyframes draw { to { stroke-dashoffset: 0; } }
 @keyframes pop { to { transform: scale(1); } }
-@keyframes logoFloat { 50% { transform: translateY(-8px); } }
-.intro-title {
-  margin: 18px 0 0; font-size: 64px; font-weight: 800; letter-spacing: 18px; padding-left: 18px;
-  background: linear-gradient(90deg, #fff, #c3b5ff, #9b87f5, #20c997, #fff);
-  background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
-  animation: shine 4s linear infinite;
-}
-.intro-title span { display: inline-block; opacity: 0; transform: translateY(40px) rotateX(90deg); animation: letterIn .8s var(--spring) forwards; }
-.intro-title span:nth-child(1) { animation-delay: 1.3s; }
-.intro-title span:nth-child(2) { animation-delay: 1.42s; }
-.intro-title span:nth-child(3) { animation-delay: 1.54s; }
-.intro-title span:nth-child(4) { animation-delay: 1.66s; }
-@keyframes letterIn { to { opacity: 1; transform: none; } }
 @keyframes shine { to { background-position: 300% 0; } }
-.intro-sub {
-  font-family: var(--hand); font-size: 38px; color: #c3b5ff; margin-top: -12px;
-  clip-path: inset(0 100% 0 0); animation: write 1s ease-out 2s forwards;
-}
+.intro-word { display: block; height: auto; width: 360px; max-width: 80vw; margin: 26px auto 0; background: linear-gradient(90deg, #fff, #c3b5ff, #9b87f5, #20c997, #fff); background-size: 300% 100%; clip-path: inset(0 100% 0 0); animation: write 1.1s cubic-bezier(.7,0,.2,1) 1.3s forwards, shine 4s linear 2.4s infinite; }
 @keyframes write { to { clip-path: inset(0 0 0 0); } }
 .intro-tag { color: var(--muted); letter-spacing: 6px; text-transform: uppercase; font-size: 12px; margin-top: 10px; opacity: 0; animation: fadeUp .8s var(--ease) 2.5s forwards; }
 .intro-bar { width: 220px; height: 3px; border-radius: 3px; background: rgba(255,255,255,.08); margin: 26px auto 0; overflow: hidden; opacity: 0; animation: fadeUp .4s 2.6s forwards; }
@@ -208,9 +198,8 @@ input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px;
 .auth-card { width: 100%; max-width: 400px; animation: cardIn .7s var(--spring) both; }
 @keyframes cardIn { from { opacity: 0; transform: translateY(30px) scale(.96); } to { opacity: 1; transform: none; } }
 .auth-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
-.auth-brand img { width: 46px; height: 46px; }
-.auth-brand b { font-size: 22px; letter-spacing: 3px; }
-.auth-brand small { display: block; font-family: var(--hand); color: var(--accent); font-size: 18px; margin-top: -6px; letter-spacing: 0; }
+.auth-brand .logo-mark { height: 52px; }
+.auth-brand .logo-word { height: 40px; }
 .auth-card h3 { font-size: 26px; margin: 0 0 4px; }
 .auth-card .sub { color: var(--muted); margin: 0 0 24px; }
 .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 4px; margin-bottom: 22px; position: relative; }
@@ -244,11 +233,9 @@ input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px;
 .sidebar { background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; overflow: hidden; animation: slideRight .6s var(--ease); }
 @keyframes slideRight { from { transform: translateX(-30px); opacity: 0; } }
 .sb-head { display: flex; align-items: center; gap: 10px; padding: 16px 16px 10px; }
-.sb-head img { width: 36px; height: 36px; transition: transform .6s var(--spring); }
-.sb-head img:hover { transform: rotate(360deg); }
-.sb-head .brand-txt { line-height: 1; white-space: nowrap; }
-.sb-head b { letter-spacing: 3px; font-size: 16px; }
-.sb-head small { display: block; font-family: var(--hand); color: var(--accent); font-size: 15px; }
+.sb-mark { height: 38px; transition: transform .6s var(--spring); }
+.sb-mark:hover { transform: rotate(-12deg) scale(1.1); }
+.sb-head .brand-txt { height: 30px; }
 .sb-project { margin: 6px 12px 8px; padding: 9px 10px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--line); display: flex; align-items: center; gap: 10px; cursor: pointer; transition: border-color .2s; }
 .sb-project:hover { border-color: var(--accent); }
 .sb-project .pico { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: #fff; flex-shrink: 0; }
@@ -491,3 +478,9 @@ html.desktop .modal-back, html.desktop .cmdk, html.desktop .dropdown, html.deskt
 html.desktop.plat-darwin .topbar { padding-right: 20px; }
 html.desktop.plat-darwin .sb-head { padding-top: 46px; }
 html.desktop.plat-darwin .auth-art { padding-top: 60px; }
+
+/* animasyonlar kapalı */
+html.no-anim *, html.no-anim *::before, html.no-anim *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
+.upd-chip span { font-variant-numeric: tabular-nums; }
+.upd-chip.ready { animation: pulse 1.8s infinite; }
+html.desktop #updChip { -webkit-app-region: no-drag; }

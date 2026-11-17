@@ -73,6 +73,9 @@
     return () => { cancelAnimationFrame(raf); window.removeEventListener('mousemove', onMove); window.removeEventListener('resize', resize); };
   };
 
+  const introEl = document.getElementById('intro');
+  A.introHTML = introEl ? introEl.innerHTML : '';
+
   A.playIntro = function (skipAnim) {
     return new Promise((resolve) => {
       const intro = document.getElementById('intro');

@@ -20,7 +20,7 @@
       const inApp = !document.getElementById('app').classList.contains('hidden') && !document.getElementById('intro');
       const authVisible = !document.getElementById('auth').classList.contains('hidden');
       let color = cs.getPropertyValue(inApp ? '--panel' : '--bg').trim() || '#0b0c10';
-      if (document.getElementById('intro')) color = '#0e0d18';
+      if (document.getElementById('intro')) color = '#0b0c10';
       else if (authVisible) color = cs.getPropertyValue('--bg').trim();
       window.ayraDesktop.setTitleBar(color, cs.getPropertyValue('--text').trim() || '#e9e9f0');
     });

@@ -1,10 +1,22 @@
-name: Masaüstü Uygulamasını Derle
+name: Masaüstü Uygulamasını Derle ve Yayınla
 
+# Her gönderimde testler çalışır, uygulama derlenir ve yeni sürüm GitHub Releases'a
+# yayınlanır. Kurulu uygulamalar bu sürümü otomatik olarak bulup kendini günceller.
 on:
   push:
     paths-ignore:
       - '**.md'
   workflow_dispatch:
+
+concurrency:
+  group: desktop-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  APP_VERSION: 1.1.${{ github.run_number }}
 
 jobs:
   test:
@@ -22,7 +34,7 @@ jobs:
       - run: npm test
 
   windows:
-    name: Windows (.exe)
+    name: Windows (.exe) derle ve yayınla
     needs: test
     runs-on: windows-latest
     steps:
@@ -32,8 +44,13 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npx electron-builder --win nsis portable --publish never
+      - name: Sürüm numarasını ayarla
+        shell: bash
+        run: npm version "$APP_VERSION" --no-git-tag-version --allow-same-version
+      - name: Derle ve GitHub Releases'a yayınla
+        run: npx electron-builder --win nsis portable --publish always
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
       - uses: actions/upload-artifact@v4
         with:
@@ -42,8 +59,8 @@ jobs:
           retention-days: 30
 
   linux:
-    name: Linux (AppImage)
-    needs: test
+    name: Linux (AppImage) derle ve yayınla
+    needs: windows
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -52,9 +69,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npx electron-builder --linux AppImage --publish never
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Ayra-Design-Linux
-          path: dist/*.AppImage
-          retention-days: 30
+      - run: npm version "$APP_VERSION" --no-git-tag-version --allow-same-version
+      - run: npx electron-builder --linux AppImage --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

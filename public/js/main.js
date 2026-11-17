@@ -15,7 +15,7 @@
       const saved = A.ls.get('project');
       A.state.projectId = projects.find((p) => p.id === saved) ? saved : projects[0] ? projects[0].id : null;
       const prefs = me.user.prefs || {};
-      A.applyTheme(prefs.theme || 'dark', prefs.accent || null);
+      A.applyAppearance(prefs);
       A.ls.set('intro', prefs.intro !== false);
       A.hideAuth();
       A.buildShell();
@@ -67,6 +67,8 @@
   window.addEventListener('hashchange', () => A.route());
 
   async function start() {
+    const ap = A.ls.get('appearance');
+    if (ap) try { A.applyAppearance(ap); } catch {}
     const token = A.ls.get('token') || sessionStorage.getItem('ayra.token');
     const statusP = A.get('/api/status').catch(() => ({}));
     await A.playIntro(A.ls.get('intro', true) === false);
