@@ -23,14 +23,14 @@
         </div>
       </div>
       <div class="auth-panel">
-        ${window.ayraDesktop ? `<button class="btn ghost sm server-btn" id="srvBtn">${A.icon('server')} Sunucu</button>` : ''}
+        ${window.ayraDesktop || A.inAndroid ? `<button class="btn ghost sm server-btn" id="srvBtn">${A.icon('server')} Sunucu</button>` : ''}
         <div class="auth-card" id="authCard"></div>
       </div>`;
     A.icons(root);
     if (stopParticles) stopParticles();
     stopParticles = A.particles(A.$('.auth-art canvas', root), { count: 70 });
     const srv = A.$('#srvBtn', root);
-    if (srv) srv.onclick = serverDialog;
+    if (srv) srv.onclick = A.inAndroid ? () => window.parent.postMessage({ ayra: 'change-server' }, '*') : serverDialog;
     renderCard(mode, msg);
     A.syncTitleBar();
   };

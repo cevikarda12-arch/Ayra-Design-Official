@@ -192,6 +192,7 @@ function createServer(options = {}) {
 
   // ------------------------------------------------------------- auth
   app.get('/api/status', (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*'); // mobil uygulamanın bağlantı testi için (yalnızca herkese açık durum bilgisi)
     const s = settings();
     res.json({ ok: true, studioName: s.studioName, registrationOpen: s.registrationOpen !== false, version: require('../package.json').version });
   });

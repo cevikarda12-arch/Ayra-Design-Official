@@ -73,3 +73,47 @@ jobs:
       - run: npx electron-builder --linux AppImage --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  android:
+    name: Android (.apk) derle ve yayınla
+    needs: windows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Capacitor projesini hazırla
+        working-directory: mobile
+        run: |
+          npm install --no-audit --no-fund
+          npx cap add android
+          npx cap sync android
+      - name: Simge, açılış ekranı ve renkler
+        run: |
+          pip install --quiet pillow
+          python3 mobile/android-assets.py mobile/android
+      - name: Sürüm numarasını ayarla
+        working-directory: mobile/android
+        run: |
+          CODE=$(( ${{ github.run_number }} + 100 ))
+          sed -i "s/versionCode [0-9]*/versionCode $CODE/; s/versionName \"[^\"]*\"/versionName \"$APP_VERSION\"/" app/build.gradle
+      - name: APK derle
+        working-directory: mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon -q
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/Ayra-Design-Android.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Ayra-Design-Android
+          path: Ayra-Design-Android.apk
+          retention-days: 30
+      - name: Sürüme ekle
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "v$APP_VERSION" Ayra-Design-Android.apk --clobber

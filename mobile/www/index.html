@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0c10" />
+  <title>Ayra Design</title>
+  <style>
+    @font-face { font-family: 'Poppins'; font-weight: 400; src: url(fonts/poppins-latin-400-normal.woff2) format('woff2'); }
+    @font-face { font-family: 'Poppins'; font-weight: 600; src: url(fonts/poppins-latin-600-normal.woff2) format('woff2'); }
+    @font-face { font-family: 'Poppins'; font-weight: 400; src: url(fonts/poppins-latin-ext-400-normal.woff2) format('woff2'); unicode-range: U+0100-024F; }
+    @font-face { font-family: 'Poppins'; font-weight: 600; src: url(fonts/poppins-latin-ext-600-normal.woff2) format('woff2'); unicode-range: U+0100-024F; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; height: 100%; background: #0b0c10; color: #e9e9f0; font-family: Poppins, system-ui, sans-serif; overflow: hidden; }
+    #frame { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: #0b0c10; display: none; }
+    body.connected #frame { display: block; }
+    body.connected #connect { display: none; }
+    #connect { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: calc(30px + env(safe-area-inset-top)) 26px calc(30px + env(safe-area-inset-bottom));
+      background: radial-gradient(ellipse at 50% 20%, #2a1f5c 0%, #120f24 45%, #0b0c10 80%); }
+    .logo { display: flex; flex-direction: column; align-items: center; gap: 16px; margin-bottom: 34px; animation: up .8s cubic-bezier(.2,.8,.2,1) both; }
+    .mark { width: 92px; height: 104px; background: linear-gradient(135deg, #c3b5ff, #9b87f5 50%, #20c997); -webkit-mask: url(mark.png) center / contain no-repeat; mask: url(mark.png) center / contain no-repeat; filter: drop-shadow(0 0 24px rgba(155,135,245,.55)); }
+    .word { width: 210px; height: 71px; background: #fff; -webkit-mask: url(wordmark.png) center / contain no-repeat; mask: url(wordmark.png) center / contain no-repeat; }
+    h2 { margin: 0 0 6px; font-size: 21px; }
+    p { margin: 0 0 18px; color: #9aa0b4; font-size: 14px; line-height: 1.5; }
+    label { font-size: 12px; font-weight: 600; letter-spacing: .6px; color: #b4b8c7; text-transform: uppercase; }
+    input { width: 100%; height: 52px; margin: 8px 0 14px; padding: 0 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.05); color: #fff; font: 16px Poppins, sans-serif; outline: none; }
+    input:focus { border-color: #9b87f5; box-shadow: 0 0 0 3px rgba(155,135,245,.2); }
+    button { width: 100%; height: 52px; border: 0; border-radius: 14px; font: 600 16px Poppins, sans-serif; color: #fff; background: linear-gradient(135deg, #9b87f5, #7c6ee6); box-shadow: 0 10px 30px -10px #9b87f5; }
+    button:active { transform: scale(.98); }
+    button:disabled { opacity: .6; }
+    .card { animation: up .8s cubic-bezier(.2,.8,.2,1) .15s both; }
+    .msg { min-height: 22px; font-size: 13px; margin-top: 12px; text-align: center; }
+    .msg.err { color: #ff6b6b; } .msg.ok { color: #20c997; }
+    .hint { margin-top: 22px; padding: 14px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); font-size: 13px; color: #9aa0b4; line-height: 1.6; }
+    .hint b { color: #e9e9f0; }
+    .recent { display: flex; flex-wrap: wrap; gap: 8px; margin: -4px 0 14px; }
+    .recent span { font-size: 12px; padding: 5px 10px; border-radius: 99px; background: rgba(155,135,245,.14); color: #c3b5ff; }
+    .loading { position: fixed; inset: 0; display: none; place-items: center; background: #0b0c10; }
+    body.loading-on .loading { display: grid; }
+    .spin { width: 40px; height: 40px; border-radius: 50%; border: 3px solid rgba(255,255,255,.1); border-top-color: #9b87f5; animation: s .8s linear infinite; }
+    @keyframes s { to { transform: rotate(360deg); } }
+    @keyframes up { from { opacity: 0; transform: translateY(20px); } }
+  </style>
+</head>
+<body>
+  <div id="connect">
+    <div class="logo"><div class="mark"></div><div class="word"></div></div>
+    <div class="card">
+      <h2>Stüdyoya bağlan</h2>
+      <p>Ayra Design'ın çalıştığı bilgisayarın adresini girin.</p>
+      <label for="url">Sunucu adresi</label>
+      <input id="url" type="url" inputmode="url" autocomplete="url" placeholder="192.168.1.20:4321" />
+      <div class="recent" id="recent"></div>
+      <button id="go">Bağlan</button>
+      <div class="msg" id="msg"></div>
+      <div class="hint">📍 Adresi nerede bulurum?<br>Bilgisayardaki Ayra Design'da <b>profil menüsü → Telefondan aç (QR)</b> veya <b>Yönetim Paneli → Sistem</b>. Telefon ve bilgisayar <b>aynı Wi-Fi</b>'da olmalı.</div>
+    </div>
+  </div>
+  <iframe id="frame" title="Ayra Design" allow="clipboard-read; clipboard-write; fullscreen; camera; microphone"></iframe>
+  <div class="loading"><div class="spin"></div></div>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const KEY = 'ayra.server', RECENT = 'ayra.recent';
+    const norm = (v) => {
+      v = String(v || '').trim().replace(/\/+$/, '');
+      if (!v) return '';
+      if (!/^https?:\/\//i.test(v)) v = 'http://' + v;
+      try { const u = new URL(v); if (!u.port && u.protocol === 'http:' && /^\d+\.\d+\.\d+\.\d+$/.test(u.hostname)) u.port = '4321'; return u.origin; } catch { return ''; }
+    };
+    const recent = () => { try { return JSON.parse(localStorage.getItem(RECENT)) || []; } catch { return []; } };
+    const drawRecent = () => {
+      $('recent').innerHTML = recent().map((r) => `<span data-u="${r}">${r.replace(/^https?:\/\//, '')}</span>`).join('');
+      $('recent').querySelectorAll('span').forEach((s) => (s.onclick = () => { $('url').value = s.dataset.u; connect(); }));
+    };
+    const msg = (t, cls = '') => { $('msg').textContent = t; $('msg').className = 'msg ' + cls; };
+    async function check(url) {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 6000);
+      try { const r = await fetch(url + '/api/status', { signal: ctrl.signal, cache: 'no-store' }); const d = await r.json(); return d && d.ok; }
+      catch { return false; } finally { clearTimeout(t); }
+    }
+    async function connect(auto = false) {
+      const url = norm($('url').value);
+      if (!url) return msg('Geçerli bir adres girin (ör. 192.168.1.20:4321)', 'err');
+      $('go').disabled = true; msg('Bağlanılıyor...');
+      const ok = await check(url);
+      $('go').disabled = false;
+      if (!ok) { document.body.classList.remove('loading-on'); return msg(auto ? 'Son kullanılan sunucuya ulaşılamadı. Bilgisayar açık ve aynı Wi-Fi’da mı?' : 'Sunucuya ulaşılamadı. Adresi ve Wi-Fi bağlantısını kontrol edin.', 'err'); }
+      localStorage.setItem(KEY, url);
+      localStorage.setItem(RECENT, JSON.stringify([url, ...recent().filter((r) => r !== url)].slice(0, 4)));
+      msg('Bağlandı ✓', 'ok');
+      document.body.classList.add('loading-on');
+      const f = $('frame');
+      f.onload = () => { document.body.classList.remove('loading-on'); document.body.classList.add('connected'); };
+      f.src = url + '/?app=android';
+    }
+    $('go').onclick = () => connect();
+    $('url').addEventListener('keydown', (e) => { if (e.key === 'Enter') connect(); });
+    // uygulamanın içinden "sunucuyu değiştir" isteği
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.ayra === 'change-server') {
+        const f = $('frame');
+        f.onload = null;
+        f.src = 'about:blank';
+        document.body.classList.remove('connected', 'loading-on');
+        msg('');
+        drawRecent();
+      }
+    });
+    drawRecent();
+    const saved = localStorage.getItem(KEY);
+    if (saved) { $('url').value = saved.replace(/^http:\/\//, ''); document.body.classList.add('loading-on'); connect(true); }
+  </script>
+</body>
+</html>

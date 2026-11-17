@@ -9,6 +9,10 @@
     order: [],
   });
 
+  // Android uygulamasının içinde mi çalışıyor?
+  A.inAndroid = window.parent !== window && /[?&]app=android/.test(location.search);
+  if (A.inAndroid) document.documentElement.classList.add('in-android');
+
   // ------------------------------------------------------------------ desktop (çerçevesiz pencere)
   A.desktop = !!window.ayraDesktop;
   if (A.desktop) document.documentElement.classList.add('desktop', 'plat-' + (window.ayraDesktop.platform || 'win32'));

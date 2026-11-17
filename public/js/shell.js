@@ -333,7 +333,7 @@
       { html: `${A.icon((u.prefs || {}).dnd ? 'bell' : 'bell-off')} ${(u.prefs || {}).dnd ? 'Rahatsız etme: kapat' : 'Rahatsız etme: aç'}`, action: () => A.toggleDnd() },
       { icon: 'focus', label: 'Odak modu (Ctrl + .)', action: () => A.toggleFocus() },
       { icon: 'smartphone', label: 'Telefondan aç (QR)', action: () => A.showPhoneQR() },
-      ...(!window.ayraDesktop && !A.isStandalone() ? [{ icon: 'download', label: 'Ana ekrana / bilgisayara yükle', action: () => A.installApp() }] : []),
+      ...(!window.ayraDesktop && !A.inAndroid && !A.isStandalone() ? [{ icon: 'download', label: 'Ana ekrana / bilgisayara yükle', action: () => A.installApp() }] : []),
       '-',
       { icon: 'circle-user-round', label: 'Profil ve ayarlar', action: () => A.go('profile') },
       ...(A.can('view_admin') ? [{ icon: 'shield-check', label: 'Yönetim paneli', action: () => A.go('admin') }] : []),

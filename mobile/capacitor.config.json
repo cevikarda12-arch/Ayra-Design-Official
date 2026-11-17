@@ -1,0 +1,13 @@
+{
+  "appId": "com.ayradesign.studio.mobile",
+  "appName": "Ayra Design",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  },
+  "android": {
+    "backgroundColor": "#0b0c10",
+    "allowMixedContent": true
+  }
+}

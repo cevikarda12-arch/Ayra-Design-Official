@@ -104,6 +104,22 @@ npm run dist:win     # dist/ klasöründe .exe oluşur
 
 ---
 
+## 📱 Mobil (telefon ve tablet)
+
+Ayra Design telefon ekranına tamamen uyarlanmıştır: alt menü çubuğu, kenardan kaydırarak açılan menü, alttan açılan pencereler, notlarda ve sohbette liste/detay geçişi, dokunmatik çizim ve editörler.
+
+Telefon, Ayra Design'ın çalıştığı bilgisayarla **aynı Wi-Fi ağında** olmalıdır (veya sunucu internette olmalıdır).
+
+**Android uygulaması (.apk):**
+1. GitHub → **Releases** → en son sürümden **`Ayra-Design-Android.apk`** dosyasını telefona indirin.
+2. Açın; Android "bilinmeyen kaynak" izni isterse bu kaynağa izin verin ve yükleyin.
+3. Uygulama açılınca sunucu adresini girin (bilgisayarda **profil menüsü → Telefondan aç (QR)** veya **Yönetim Paneli → Sistem**'de yazar, ör. `192.168.1.20:4321`). Adres hatırlanır.
+4. Sunucuyu değiştirmek için giriş ekranının sağ üstündeki **Sunucu** düğmesine dokunun.
+
+**iPhone / iPad (ve APK istemeyen Android'ler):**
+1. Bilgisayarda **profil menüsü → Telefondan aç (QR)**'daki QR kodu telefonun kamerasıyla okutun.
+2. Açılan sayfada **Paylaş → Ana Ekrana Ekle** (iPhone) veya **⋮ → Ana ekrana ekle** (Android) deyin. Ayra Design simgesiyle tam ekran açılır.
+
 ## 👥 Ekibi bağlamak
 
 Ayra Design açıldığında bilgisayarınızda **yerel bir sunucu** başlatır (varsayılan port `4321`). Verileriniz sizin bilgisayarınızda durur.
