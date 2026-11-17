@@ -2,13 +2,21 @@
 <html lang="tr" data-theme="dark">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0c10" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Ayra Design" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="img/icon-192.png" />
   <title>Ayra Design · Oyun Tasarım Stüdyosu</title>
   <meta name="description" content="Ayra Design - oyun tasarım ekipleri için hepsi bir arada stüdyo uygulaması" />
   <link rel="icon" href="img/favicon.png" type="image/png" />
   <link rel="stylesheet" href="css/fonts.css" />
   <link rel="stylesheet" href="css/app.css" />
   <link rel="stylesheet" href="css/modules.css" />
+  <link rel="stylesheet" href="css/mobile.css" />
 </head>
 <body>
   <!-- Açılış animasyonu -->
@@ -33,6 +41,7 @@
   <div id="modalRoot"></div>
 
   <script src="vendor/lucide.min.js"></script>
+  <script src="vendor/qrcode.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="js/core.js"></script>
   <script src="js/intro.js"></script>

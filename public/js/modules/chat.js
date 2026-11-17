@@ -43,7 +43,7 @@
           <div class="room-sec">Direkt Mesajlar</div>${dms.map(item).join('')}
           ${others.map((u) => `<button class="room dim" data-dm="${u.id}">${A.avatar(u, 'xs', true)}<span class="grow ell">${A.esc(u.displayName)}</span></button>`).join('')}`;
         A.icons(box);
-        A.$$('[data-id]', box).forEach((b) => (b.onclick = () => openRoom(b.dataset.id)));
+        A.$$('[data-id]', box).forEach((b) => (b.onclick = () => { openRoom(b.dataset.id); el.querySelector('.chat').classList.add('show-detail'); }));
         A.$$('[data-dm]', box).forEach((b) => (b.onclick = () => openDm(b.dataset.dm)));
         A.unread.chat = rooms.reduce((s, r) => s + (r.unread || 0), 0);
         A.renderNav();
@@ -52,7 +52,7 @@
         try {
           const r = await A.post('/api/rooms', { type: 'dm', userId });
           if (!rooms.find((x) => x.id === r.id)) rooms.push(r);
-          openRoom(r.id);
+          openRoom(r.id); el.querySelector('.chat').classList.add('show-detail');
         } catch (e) { A.err(e); }
       };
       A.chatOpenDm = openDm;
@@ -69,7 +69,7 @@
         const isDm = room.type === 'dm';
         const other = isDm ? A.user(room.members.find((x) => x !== A.state.user.id) || A.state.user.id) : null;
         main.innerHTML = `
-          <div class="chat-head">
+          <div class="chat-head"><button class="btn ghost icon sm mob-only" data-back title="Odalar">${A.icon('chevron-left')}</button>
             ${isDm ? A.avatar(other, 'sm', true) : `<span class="ch-ico big">${room.type === 'private' ? A.icon('lock') : A.esc(room.icon || '#')}</span>`}
             <div class="grow"><b>${isDm ? A.esc(other.displayName) : '#' + A.esc(room.name)}</b><div class="small muted ell">${isDm ? A.esc(A.PRESENCE[A.presenceOf(other)] + (other.statusText ? ' · ' + other.statusText : '')) : A.esc(room.topic || '')}</div></div>
             <div class="input-icon" style="width:190px">${A.icon('search')}<input class="input sm" id="cSearch" placeholder="Mesajlarda ara"></div>
@@ -214,6 +214,12 @@
         A.icons(box);
         A.$$('.msg', box).forEach((d) => {
           const m = messages.find((x) => x.id === d.dataset.id);
+          d.addEventListener('click', (ev) => {
+            if (ev.target.closest('button,a,input,audio,video')) return;
+            const was = d.classList.contains('tapped');
+            A.$$('.msg.tapped', box).forEach((x) => x.classList.toggle('tapped', false));
+            if (!was) d.classList.add('tapped');
+          });
           d.querySelectorAll('[data-qr]').forEach((b) => (b.onclick = () => A.state.socket.emit('chat:react', { id: m.id, emoji: b.dataset.qr })));
           d.querySelectorAll('[data-react]').forEach((b) => (b.onclick = () => A.state.socket.emit('chat:react', { id: m.id, emoji: b.dataset.react })));
           d.querySelectorAll('[data-act]').forEach((b) => (b.onclick = async () => {
@@ -288,7 +294,7 @@
         try {
           const nr = await A.post('/api/rooms', { ...r, members: picked });
           if (!rooms.find((x) => x.id === nr.id)) rooms.push(nr);
-          openRoom(nr.id);
+          openRoom(nr.id); el.querySelector('.chat').classList.add('show-detail');
         } catch (e) { A.err(e); }
       }
       const memberPicker = (sel) => `<div class="mp">${A.activeUsers().filter((u) => u.id !== A.state.user.id).map((u) => `<label>${A.avatar(u, 'xs')}<span class="grow">${A.esc(u.displayName)}</span><input type="checkbox" value="${u.id}" ${sel.includes(u.id) ? 'checked' : ''}></label>`).join('') || '<span class="muted small">Başka kullanıcı yok</span>'}</div>`;
@@ -338,6 +344,7 @@
       const def = rooms.find((r) => r.id === openId) || rooms.find((r) => r.id === A.ls.get('room')) || rooms[0];
       drawRooms();
       if (def) openRoom(def.id);
+      if (openId && def && def.id === openId) el.querySelector('.chat').classList.add('show-detail');
       else A.$('#cMain', el).innerHTML = A.emptyState('messages-square', 'Henüz oda yok', 'Yeni bir sohbet odası oluşturun.');
       this.destroy = () => { if (room) A.ls.set('room', room.id); A.chatRoomId = null; A.refreshChatUnread(); };
     },

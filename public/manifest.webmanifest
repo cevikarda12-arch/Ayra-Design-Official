@@ -1,0 +1,23 @@
+{
+  "name": "Ayra Design — Oyun Tasarım Stüdyosu",
+  "short_name": "Ayra Design",
+  "description": "Oyun tasarım ekipleri için hepsi bir arada stüdyo: görevler, GDD, sohbet, çizim panosu ve daha fazlası.",
+  "lang": "tr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b0c10",
+  "theme_color": "#0b0c10",
+  "categories": ["productivity", "design", "games"],
+  "icons": [
+    { "src": "img/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "img/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "img/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Görev Panosu", "url": "/#/tasks" },
+    { "name": "Sohbet", "url": "/#/chat" },
+    { "name": "Not Defteri", "url": "/#/notes" }
+  ]
+}

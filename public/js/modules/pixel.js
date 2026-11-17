@@ -19,7 +19,7 @@
             <div class="row" style="gap:6px"><button class="btn xs" id="pPlay">${A.icon('play')}</button><input type="range" min="1" max="24" id="pFps" class="grow"><b class="small" id="pFpsV"></b></div></div>
         </aside>
         <section class="lvl-main">
-          <div class="draw-top"><b id="pName"></b><span class="small muted" id="pInfo"></span><span class="spacer"></span>
+          <div class="draw-top"><button class="btn ghost icon sm mob-only" data-side-tgl title="Paneller">${A.icon('panel-left')}</button><b id="pName"></b><span class="small muted" id="pInfo"></span><span class="spacer"></span>
             <button class="btn icon sm" id="pUndo" title="Geri al">${A.icon('undo-2')}</button><button class="btn icon sm" id="pRedo" title="Yinele">${A.icon('redo-2')}</button>
             <button class="btn icon sm" id="pMirror" title="Ayna (simetrik çizim)">${A.icon('flip-horizontal')}</button>
             <button class="btn icon sm active" id="pOnion" title="Soğan kabuğu (önceki kare)">${A.icon('layers')}</button>

@@ -30,7 +30,7 @@
         </aside>
         <section class="lvl-main">
           <div class="draw-top">
-            <b id="lName"></b><span class="small muted" id="lInfo"></span><span class="spacer"></span>
+            <button class="btn ghost icon sm mob-only" data-side-tgl title="Paneller">${A.icon('panel-left')}</button><b id="lName"></b><span class="small muted" id="lInfo"></span><span class="spacer"></span>
             <div class="seg" id="lTools">${TOOLS.map(([k, ic, t]) => `<button data-tool="${k}" title="${t}">${A.icon(ic)}</button>`).join('')}</div>
             <div class="seg"><button id="lZo">${A.icon('zoom-out')}</button><button id="lZi">${A.icon('zoom-in')}</button></div>
             <button class="btn icon sm active" id="lGrid" title="Izgara">${A.icon('grid-3x3')}</button>

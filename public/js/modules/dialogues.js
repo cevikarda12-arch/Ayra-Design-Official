@@ -16,7 +16,7 @@
           <div style="padding:12px" class="small muted">💡 Bir seçeneğin sağındaki <b>●</b> noktasını başka bir düğüme sürükleyerek bağlayın. Boş alana bırakırsanız yeni düğüm oluşur.</div>
         </aside>
         <section class="lvl-main">
-          <div class="draw-top"><b id="gName"></b><span class="small muted" id="gInfo"></span><span class="spacer"></span>
+          <div class="draw-top"><button class="btn ghost icon sm mob-only" data-side-tgl title="Paneller">${A.icon('panel-left')}</button><b id="gName"></b><span class="small muted" id="gInfo"></span><span class="spacer"></span>
             <button class="btn sm" id="gAdd">${A.icon('plus')} Düğüm</button>
             <button class="btn sm" id="gFit">${A.icon('scan')} Ortala</button>
             <button class="btn sm" id="gMore">${A.icon('more-horizontal')}</button>

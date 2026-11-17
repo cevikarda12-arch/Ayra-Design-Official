@@ -24,7 +24,7 @@
         try {
           const n = await A.col.create('notes', { title: 'Adsız not', content: '', private: true, folder: filter.folder || 'Kişisel', tags: [], pinned: false });
           if (!notes.find((x) => x.id === n.id)) notes.push(n);
-          select(n.id);
+          select(n.id); el.querySelector('.notes').classList.add('show-detail');
           setTimeout(() => { const t = A.$('#neTitle', el); if (t) { t.focus(); t.select(); } }, 50);
         } catch (e) { A.err(e); }
       };
@@ -47,7 +47,7 @@
           <div class="ni-prev">${A.esc((n.content || '').replace(/[#>*`\-\[\]]/g, '').slice(0, 90)) || '<i>Boş not</i>'}</div>
           <div class="small muted row" style="gap:6px">${n.createdBy !== A.state.user.id ? A.avatar(n.createdBy, 'xs') : ''}${A.timeAgo(n.updatedAt)}</div></div>`).join('') || '<p class="muted small" style="padding:14px">Not bulunamadı.</p>';
         A.icons(box);
-        A.$$('.note-item', box).forEach((d) => (d.onclick = () => select(d.dataset.id)));
+        A.$$('.note-item', box).forEach((d) => (d.onclick = () => { select(d.dataset.id); el.querySelector('.notes').classList.add('show-detail'); }));
       };
 
       let pending = {}, pendingId = null;
@@ -79,7 +79,7 @@
         const own = cur.createdBy === A.state.user.id;
         const editable = own || (!cur.private && A.can('edit_all'));
         main.innerHTML = `
-          <div class="ne-head">
+          <div class="ne-head"><button class="btn ghost sm mob-only mob-back" data-back>${A.icon('chevron-left')} Notlar</button>
             <input class="ne-title" id="neTitle" value="${A.esc(cur.title)}" placeholder="Başlık" ${editable ? '' : 'readonly'}>
             <div class="row wrap" style="gap:8px">
               <span class="small muted" id="neSaved">${A.icon('check')} Kaydedildi</span>
@@ -147,6 +147,7 @@
       notes = await A.col.list('notes');
       drawFolders();
       drawList();
+      if (openId) el.querySelector('.notes').classList.add('show-detail');
       select(openId || (notes.sort((a, b) => b.updatedAt - a.updatedAt)[0] || {}).id);
       A.viewOn('db:notes', (p) => {
         if (p.action === 'delete') { notes = notes.filter((n) => n.id !== p.item.id); if (cur && cur.id === p.item.id) select(null); }

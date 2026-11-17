@@ -148,6 +148,7 @@
             ${canSys ? `<button class="btn primary" id="sySave">${A.icon('save')} Kaydet</button>` : ''}</div>
           <div class="card"><div class="card-title">${A.icon('wifi')} Ekibi bağlama</div>
             <p class="small muted" style="margin-top:0">Aynı ağdaki (Wi-Fi / LAN) ekip arkadaşlarınız aşağıdaki adreslerden birini tarayıcıda açarak veya Ayra Design uygulamasında <b>Sunucu → Uzak sunucuya bağlan</b> seçeneğiyle stüdyoya katılabilir:</p>
+            ${o.lanAddresses.length ? `<div class="qr-box sm" title="Telefonla okutun">${A.qrSvg(o.lanAddresses[0], 4)}</div><p class="small muted center" style="margin-top:4px">📱 Telefonla okutun — aynı Wi-Fi ağındaki telefonlar stüdyoyu açar</p>` : ''}
             ${o.lanAddresses.length ? o.lanAddresses.map((a) => `<div class="row lan"><code class="grow">${A.esc(a)}</code><button class="btn xs" data-copy="${A.esc(a)}">${A.icon('copy')}</button></div>`).join('') : '<p class="small">Ağ bağlantısı bulunamadı.</p>'}
             <p class="small muted">İnternet üzerinden erişim için sunucuyu bir buluta (ör. VPS) kurabilir veya port yönlendirme yapabilirsiniz. Ayrıntılar README dosyasında.</p></div>
           <div class="card"><div class="card-title">${A.icon('database')} Yedekleme</div>

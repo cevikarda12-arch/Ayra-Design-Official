@@ -24,6 +24,7 @@
       </aside>
       <section class="main">
         <header class="topbar">
+          <button class="btn ghost icon mob-only" id="menuBtn" title="Menü">${A.icon('menu')}</button>
           <div class="crumbs" id="crumbs"></div>
           <div class="search-trigger" id="searchBtn">${A.icon('search')}<span>Ara veya komut çalıştır...</span><kbd>Ctrl K</kbd></div>
           <div id="timerChip"></div>
@@ -36,6 +37,8 @@
         <div class="conn-bar hidden" id="connBar">${A.icon('wifi')} Sunucu bağlantısı koptu, yeniden bağlanılıyor...</div>
         <div class="view" id="view"></div>
       </section>
+      <div class="drawer-back" id="drawerBack"></div>
+      <nav class="bottom-nav" id="bottomNav"></nav>
       <button class="focus-exit" id="focusExit" title="Odak modundan çık (Esc)">${A.icon('minimize-2')} Odak modu · çıkmak için Esc</button>`;
     A.icons(app);
     A.$('#collapseBtn').onclick = () => { app.classList.toggle('collapsed'); A.ls.set('collapsed', app.classList.contains('collapsed')); };
@@ -43,6 +46,9 @@
     A.$('#navEditBtn').onclick = navEditor;
     A.$('#focusBtn').onclick = () => A.toggleFocus();
     A.$('#focusExit').onclick = () => A.toggleFocus(false);
+    A.$('#menuBtn').onclick = () => A.toggleDrawer();
+    A.$('#drawerBack').onclick = () => A.toggleDrawer(false);
+    renderBottomNav();
     renderDnd();
     A.$('#logoutBtn').onclick = async () => { if (await A.confirm('Oturumu kapatmak istiyor musunuz?', { title: 'Çıkış yap', ok: 'Çıkış yap', danger: false })) A.logout(); };
     A.$('#searchBtn').onclick = openPalette;
@@ -110,7 +116,7 @@
     nav.innerHTML = html;
     A.icons(nav);
     A.$$('[data-go]', nav).forEach((b) => {
-      b.onclick = () => A.go(b.dataset.go);
+      b.onclick = () => { A.go(b.dataset.go); A.toggleDrawer(false); };
       b.oncontextmenu = (e) => { e.preventDefault(); navItemMenu(b.dataset.go, e); };
     });
     A.$$('[data-fold]', nav).forEach((g) => (g.onclick = () => {
@@ -119,6 +125,7 @@
       A.ls.set('navFolded', [...f]);
       renderNav();
     }));
+    renderBottomNav();
   }
   function navItemMenu(id, e) {
     const prefs = A.state.user.prefs || {};
@@ -325,6 +332,8 @@
       '-',
       { html: `${A.icon((u.prefs || {}).dnd ? 'bell' : 'bell-off')} ${(u.prefs || {}).dnd ? 'Rahatsız etme: kapat' : 'Rahatsız etme: aç'}`, action: () => A.toggleDnd() },
       { icon: 'focus', label: 'Odak modu (Ctrl + .)', action: () => A.toggleFocus() },
+      { icon: 'smartphone', label: 'Telefondan aç (QR)', action: () => A.showPhoneQR() },
+      ...(!window.ayraDesktop && !A.isStandalone() ? [{ icon: 'download', label: 'Ana ekrana / bilgisayara yükle', action: () => A.installApp() }] : []),
       '-',
       { icon: 'circle-user-round', label: 'Profil ve ayarlar', action: () => A.go('profile') },
       ...(A.can('view_admin') ? [{ icon: 'shield-check', label: 'Yönetim paneli', action: () => A.go('admin') }] : []),
@@ -465,8 +474,45 @@
     const c = A.$('#crumbs');
     if (c && m) { c.innerHTML = `${A.icon(m.icon)}<span>${A.esc(m.title)}</span>`; A.icons(c); }
     renderNav();
+    renderBottomNav();
+    A.toggleDrawer(false);
     document.title = (m ? m.title + ' · ' : '') + 'Ayra Design';
   });
+
+  // ---------------------------------------------------------------- mobil: çekmece menü + alt menü çubuğu
+  A.isMobile = () => window.matchMedia('(max-width: 760px)').matches;
+  A.toggleDrawer = (on) => {
+    const app = A.$('#app');
+    if (!app) return;
+    const next = on === undefined ? !app.classList.contains('drawer-open') : !!on;
+    app.classList.toggle('drawer-open', next);
+  };
+  const BOTTOM = [['dashboard', 'layout-dashboard', 'Pano'], ['tasks', 'kanban', 'Görevler'], ['chat', 'messages-square', 'Sohbet'], ['notes', 'notebook-pen', 'Notlar']];
+  function renderBottomNav() {
+    const el = A.$('#bottomNav');
+    if (!el) return;
+    const cur = A.current ? A.current.id : '';
+    const inBottom = BOTTOM.some(([id]) => id === cur);
+    el.innerHTML = BOTTOM.filter(([id]) => A.modules[id]).map(([id, ic, l]) => `<button class="${cur === id ? 'on' : ''}" data-bgo="${id}">${A.icon(ic)}<span>${l}</span>${id === 'chat' && A.unread.chat ? `<i class="bn-badge">${A.unread.chat > 9 ? '9+' : A.unread.chat}</i>` : ''}</button>`).join('')
+      + `<button class="${!inBottom ? 'on' : ''}" data-bmore>${A.icon('layout-grid')}<span>${!inBottom && A.modules[cur] ? A.esc(A.modules[cur].title.split(' ')[0]) : 'Tümü'}</span>${A.unread.pending ? '<i class="bn-badge dot"></i>' : ''}</button>`;
+    A.icons(el);
+    A.$$('[data-bgo]', el).forEach((b) => (b.onclick = () => A.go(b.dataset.bgo)));
+    A.$('[data-bmore]', el).onclick = () => A.toggleDrawer(true);
+  }
+  A.renderBottomNav = renderBottomNav;
+  // kenardan kaydırarak menüyü aç / kapat
+  (() => {
+    let sx = null, sy = 0;
+    document.addEventListener('touchstart', (e) => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+      if (sx === null || !A.isMobile() || !A.state.user) return;
+      const t = e.changedTouches[0], dx = t.clientX - sx, dy = Math.abs(t.clientY - sy);
+      const open = A.$('#app') && A.$('#app').classList.contains('drawer-open');
+      if (!open && sx < 24 && dx > 70 && dy < 60) A.toggleDrawer(true);
+      if (open && dx < -70 && dy < 60) A.toggleDrawer(false);
+      sx = null;
+    }, { passive: true });
+  })();
 
   // ---------------------------------------------------------------- socket
   A.connectSocket = function () {

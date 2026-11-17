@@ -31,11 +31,11 @@
       try {
         const d = await A.col.create(opts.col, { ...r, projectId: A.state.projectId, content: `# ${r.title}\n\n`, order: docs.length, status: 'draft' });
         if (!docs.find((x) => x.id === d.id)) docs.push(d);
-        mode = 'split'; select(d.id);
+        mode = 'split'; select(d.id); el.querySelector('.notes').classList.add('show-detail');
       } catch (e) { A.err(e); }
     };
     A.$('#dQ', el).oninput = (e) => { q = e.target.value.toLocaleLowerCase('tr'); drawList(); };
-    A.$('#dAll', el).onclick = () => { cur = null; drawList(); showAll(); };
+    A.$('#dAll', el).onclick = () => { cur = null; drawList(); showAll(); el.querySelector('.notes').classList.add('show-detail'); };
     A.$('#dExp', el).onclick = (e) => A.menu(e.currentTarget, [
       { icon: 'file-text', label: 'Markdown (.md) indir', action: () => A.download(`${A.project().name} - ${opts.title}.md`, fullMd(), 'text/markdown') },
       { icon: 'printer', label: 'Yazdır / PDF olarak kaydet', action: () => A.printHtml(`${A.project().name} — ${opts.title}`, A.md(fullMd())) },
@@ -58,7 +58,7 @@
       A.$$('.doc-item', box).forEach((d) => (d.onclick = (e) => {
         const mv = e.target.closest('[data-mv]');
         if (mv) { e.stopPropagation(); return move(d.dataset.id, Number(mv.dataset.mv)); }
-        select(d.dataset.id);
+        select(d.dataset.id); el.querySelector('.notes').classList.add('show-detail');
       }));
       const approved = docs.filter((d) => d.status === 'approved').length;
       const words = docs.reduce((s, d) => s + ((d.content || '').trim().split(/\s+/).filter(Boolean).length), 0);
@@ -80,7 +80,7 @@
 
     const showAll = () => {
       const main = A.$('#dMain', el);
-      main.innerHTML = `<div class="doc-full"><div class="doc-cover"><div class="small muted">${A.esc(opts.title)}</div><h1>${A.esc(A.project().name)}</h1><p class="muted">${A.esc(A.project().description || '')}</p></div>
+      main.innerHTML = `<div class="doc-full"><button class="btn ghost sm mob-only mob-back" data-back>${A.icon('chevron-left')} Bölümler</button><div class="doc-cover"><div class="small muted">${A.esc(opts.title)}</div><h1>${A.esc(A.project().name)}</h1><p class="muted">${A.esc(A.project().description || '')}</p></div>
         <div class="doc-toc"><b>İçindekiler</b><ol>${sorted().map((d) => `<li><a href="javascript:void 0" data-j="${d.id}">${A.esc(d.title)}</a></li>`).join('')}</ol></div>
         ${sorted().map((d) => `<section class="md doc-sec" id="sec-${d.id}">${A.md(d.content || '')}</section>`).join('<hr>')}</div>`;
       A.$$('[data-j]', main).forEach((a) => (a.onclick = () => A.$('#sec-' + a.dataset.j, main).scrollIntoView({ behavior: 'smooth' })));
@@ -105,7 +105,7 @@
       const editable = A.canEdit(cur);
       const m = editable ? mode : 'view';
       main.innerHTML = `
-        <div class="ne-head">
+        <div class="ne-head"><button class="btn ghost sm mob-only mob-back" data-back>${A.icon('chevron-left')} ${A.esc(opts.title)}</button>
           <div class="row" style="gap:10px">${A.icon(cur.icon || 'file-text')}<input class="ne-title" id="deTitle" value="${A.esc(cur.title)}" ${editable ? '' : 'readonly'}></div>
           <div class="row wrap" style="gap:8px">
             <span class="small muted" id="deSaved">${A.avatar(cur.updatedBy || cur.createdBy, 'xs')} ${A.esc(A.user(cur.updatedBy || cur.createdBy).displayName)} · ${A.timeAgo(cur.updatedAt)}</span>
@@ -144,7 +144,7 @@
     };
 
     drawList();
-    if (openId && docs.find((d) => d.id === openId)) select(openId);
+    if (openId && docs.find((d) => d.id === openId)) { select(openId); el.querySelector('.notes').classList.add('show-detail'); }
     else if (sorted()[0]) select(sorted()[0].id);
     else showAll();
 
