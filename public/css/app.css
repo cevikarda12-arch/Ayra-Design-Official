@@ -484,3 +484,62 @@ html.no-anim *, html.no-anim *::before, html.no-anim *::after { animation-durati
 .upd-chip span { font-variant-numeric: tabular-nums; }
 .upd-chip.ready { animation: pulse 1.8s infinite; }
 html.desktop #updChip { -webkit-app-region: no-drag; }
+
+/* ---------------------------------------------------------------- giriş (karşılama) animasyonu */
+.btn.login-ok { background: linear-gradient(135deg, var(--mint), var(--accent)); animation: pop .4s var(--spring); }
+.welcome { position: fixed; inset: 0; z-index: 9500; display: grid; place-items: center; overflow: hidden; color: #fff;
+  background: radial-gradient(ellipse at 50% 40%, #2a1f5c 0%, #120f24 45%, #0b0c10 80%);
+  clip-path: circle(0px at var(--wx) var(--wy)); animation: wReveal .9s cubic-bezier(.7,0,.2,1) forwards; -webkit-app-region: drag; }
+@keyframes wReveal { to { clip-path: circle(150vmax at var(--wx) var(--wy)); } }
+.welcome.out { animation: wOut .75s cubic-bezier(.7,0,.3,1) forwards; clip-path: circle(150vmax at 50% 50%); }
+@keyframes wOut { 0% { opacity: 1; transform: none; filter: none; } 100% { opacity: 0; transform: scale(1.18); filter: blur(10px); } }
+.w-canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .7; }
+.w-burst { position: absolute; left: var(--wx); top: var(--wy); width: 10px; height: 10px; border-radius: 50%; transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 0 rgba(155,135,245,.3); animation: wBurst 1.1s ease-out .1s forwards; }
+@keyframes wBurst { to { box-shadow: 0 0 0 120vmax rgba(155,135,245,0); } }
+.w-center { position: relative; text-align: center; z-index: 2; }
+.w-avatar-wrap { position: relative; width: 150px; height: 150px; margin: 0 auto 22px; display: grid; place-items: center; animation: wPop .8s var(--spring) .35s both; }
+@keyframes wPop { from { opacity: 0; transform: scale(.3) rotate(-20deg); } }
+.w-avatar-wrap .avatar { width: 116px; height: 116px; font-size: 42px; box-shadow: 0 10px 40px rgba(0,0,0,.5); border: 4px solid #0b0c10; }
+.w-ring { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, #c3b5ff, #9b87f5, #20c997, #f06595, #c3b5ff);
+  -webkit-mask: radial-gradient(circle, transparent 62%, #000 63%); mask: radial-gradient(circle, transparent 62%, #000 63%); animation: spin 2.4s linear infinite; }
+.w-ring.r2 { inset: -14px; opacity: .35; animation-duration: 4s; animation-direction: reverse; filter: blur(6px); }
+.w-badge { position: absolute; right: 2px; bottom: 6px; height: 40px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.6)); animation: wPop .6s var(--spring) .8s both; }
+.w-greet { font-family: var(--hand); font-size: 26px; color: #c3b5ff; animation: fadeUp .5s var(--ease) .65s both; }
+.w-name { margin: 0; font-size: 58px; font-weight: 800; line-height: 1.1; letter-spacing: 1px; }
+.w-name span { display: inline-block; background: linear-gradient(90deg, #fff, #c3b5ff, #20c997); -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: wLetter .55s var(--spring) both; animation-delay: calc(.75s + var(--i) * 55ms); }
+@keyframes wLetter { from { opacity: 0; transform: translateY(40px) rotateX(90deg) scale(.6); } }
+.w-name .w-wave { -webkit-text-fill-color: initial; background: none; color: initial; margin-left: 12px; transform-origin: 70% 80%; animation: wPop .5s var(--spring) 1.2s both, wave 1.2s ease-in-out 1.6s 2; }
+@keyframes wave { 25% { transform: rotate(18deg); } 50% { transform: rotate(-10deg); } 75% { transform: rotate(14deg); } }
+.w-role { color: #aab; margin-top: 4px; animation: fadeUp .5s var(--ease) 1.05s both; }
+.w-steps { display: inline-flex; flex-direction: column; gap: 8px; margin-top: 26px; text-align: left; min-width: 280px; }
+.w-step { display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07);
+  color: #9aa0b4; font-size: 14px; animation: fadeUp .4s var(--ease) both; animation-delay: calc(1.15s + var(--i) * 90ms); transition: color .3s, border-color .3s, background .3s; }
+.w-step .w-ic svg.lucide { width: 17px; height: 17px; }
+.w-step .w-ok { margin-left: auto; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.06); transform: scale(.6); opacity: .4; transition: all .35s var(--spring); }
+.w-step .w-ok svg.lucide { width: 13px; height: 13px; opacity: 0; }
+.w-step.done { color: #fff; border-color: rgba(32,201,151,.35); background: rgba(32,201,151,.08); }
+.w-step.done .w-ic { color: #20c997; }
+.w-step.done .w-ok { background: #20c997; transform: scale(1); opacity: 1; }
+.w-step.done .w-ok svg.lucide { opacity: 1; color: #06281d; }
+.w-bar { width: 280px; height: 3px; border-radius: 3px; background: rgba(255,255,255,.08); margin: 22px auto 0; overflow: hidden; }
+.w-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #9b87f5, #20c997); animation: load 2.2s cubic-bezier(.4,0,.2,1) 1.1s forwards; }
+.w-skip { -webkit-app-region: no-drag; }
+
+/* uygulama arayüzünün parça parça kurulması */
+.app.app-enter .sidebar { animation: aeSide .8s cubic-bezier(.2,.9,.2,1) both; }
+@keyframes aeSide { from { transform: translateX(-100%); opacity: 0; } }
+.app.app-enter .sb-head .logo-mark { animation: wPop .7s var(--spring) .35s both; }
+.app.app-enter .sb-head .logo-word { animation: aeWord .7s cubic-bezier(.7,0,.2,1) .5s both; }
+@keyframes aeWord { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.app.app-enter .sb-project { animation: fadeUp .5s var(--ease) .45s both; }
+.app.app-enter .sb-group { animation: fadeIn .4s ease both; animation-delay: .5s; }
+.app.app-enter .nav-item { animation: aeNav .45s var(--spring) both; animation-delay: calc(.4s + var(--i, 0) * 32ms); }
+@keyframes aeNav { from { opacity: 0; transform: translateX(-24px); } }
+@keyframes fadeIn { from { opacity: 0; } }
+.app.app-enter .topbar { animation: aeTop .7s cubic-bezier(.2,.9,.2,1) .2s both; }
+@keyframes aeTop { from { transform: translateY(-100%); opacity: 0; } }
+.app.app-enter .topbar > * { animation: fadeUp .45s var(--ease) both; animation-delay: .55s; }
+.app.app-enter .view { animation: aeView .9s cubic-bezier(.2,.9,.2,1) .35s both; }
+@keyframes aeView { from { opacity: 0; transform: translateY(30px) scale(.98); } }

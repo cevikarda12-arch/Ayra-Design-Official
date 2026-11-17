@@ -1,6 +1,6 @@
 /* Ayra Design — başlatıcı */
 (function () {
-  A.boot = async function () {
+  A.boot = async function (opts = {}) {
     try {
       const me = await A.get('/api/me');
       A.state.user = me.user;
@@ -17,10 +17,15 @@
       const prefs = me.user.prefs || {};
       A.applyAppearance(prefs);
       A.ls.set('intro', prefs.intro !== false);
+      const animate = prefs.animations !== false;
+      const welcome = animate && opts.welcome ? A.playWelcome(me.user, opts.welcome) : null;
+      if (welcome) await new Promise((r) => setTimeout(r, 950)); // dairesel geçiş ekranı kaplasın
       A.hideAuth();
       A.buildShell();
       A.connectSocket();
       A.route();
+      if (welcome) await welcome;
+      if (animate) A.enterApp();
       A.refreshNotifCount();
       A.refreshPending();
       A.refreshChatUnread();

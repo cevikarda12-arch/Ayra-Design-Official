@@ -124,10 +124,12 @@
           const r = await A.post('/api/auth/login', { username: fd.username, password: fd.password });
           A.ls.set('lastUser', fd.username);
           A.setSession(r.token, fd.remember === 'on');
+          const br = btn.getBoundingClientRect();
+          btn.innerHTML = `${A.icon('check')} Giriş başarılı`; A.icons(btn);
+          btn.classList.add('login-ok');
           card.style.transition = 'all .5s cubic-bezier(.2,.8,.2,1)';
-          card.style.transform = 'scale(.92)'; card.style.opacity = '0';
-          A.sound('whoosh');
-          setTimeout(() => A.boot(), 350);
+          setTimeout(() => { card.style.transform = 'scale(.94)'; card.style.opacity = '0'; }, 250);
+          setTimeout(() => A.boot({ welcome: { x: br.left + br.width / 2, y: br.top + br.height / 2 } }), 380);
         }
       } catch (err) {
         btn.disabled = false; btn.innerHTML = old; A.icons(btn);

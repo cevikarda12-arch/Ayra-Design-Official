@@ -78,12 +78,14 @@
     const nav = A.$('#nav');
     if (!nav) return;
     const cur = A.current ? A.current.id : '';
+    let navIdx = 0;
     nav.innerHTML = GROUPS.map(([g, label]) => {
       const items = A.order.map((id) => A.modules[id]).filter((m) => m.group === g && (!m.perm || A.can(m.perm)));
       if (!items.length) return '';
       return `<div class="sb-group">${label}</div>` + items.map((m) => {
+        navIdx++;
         const badge = m.id === 'chat' && A.unread.chat ? `<span class="badge count">${A.unread.chat}</span>` : m.id === 'admin' && A.unread.pending ? `<span class="badge count">${A.unread.pending}</span>` : '';
-        return `<button class="nav-item ${cur === m.id ? 'on' : ''}" data-go="${m.id}" title="${A.esc(m.title)}">${A.icon(m.icon)}<span>${A.esc(m.title)}</span>${badge}</button>`;
+        return `<button class="nav-item ${cur === m.id ? 'on' : ''}" style="--i:${navIdx}" data-go="${m.id}" title="${A.esc(m.title)}">${A.icon(m.icon)}<span>${A.esc(m.title)}</span>${badge}</button>`;
       }).join('');
     }).join('');
     A.icons(nav);
