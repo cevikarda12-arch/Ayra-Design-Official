@@ -144,7 +144,7 @@
   let actx = null;
   A.sound = (kind) => {
     const prefs = (A.state.user && A.state.user.prefs) || {};
-    if (prefs.sounds === false) return;
+    if (prefs.sounds === false || (A.isDnd && A.isDnd() && kind !== 'done')) return;
     try {
       actx = actx || new (window.AudioContext || window.webkitAudioContext)();
       const o = actx.createOscillator(); const g = actx.createGain();

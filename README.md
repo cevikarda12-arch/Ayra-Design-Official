@@ -39,6 +39,8 @@ Kayıtları tamamen kapatmak için: **Yönetim Paneli → Sistem → Yeni kayıt
 | **Ekip** | Üye kartları, çevrimiçi durumları, üzerinde çalıştıkları iş, birebir mesaj |
 | **Sohbet Odaları** | Kanallar, özel odalar, birebir mesajlar, emoji tepkileri, yanıtlama, düzenleme, sabitleme, @bahsetme, "yazıyor..." göstergesi, dosya/görsel paylaşımı (sürükle-bırak), mesaj arama |
 | **Görev Panosu** | Sürükle-bırak Kanban, liste görünümü, kategori/öncelik/atanan/teslim tarihi, kontrol listesi, yorumlar, filtreler, tamamlanınca konfeti 🎉 |
+| **Yol Haritası** | Kilometre taşları zaman çizelgesi (Konsept → Prototip → Dikey Dilim → Alfa → Beta → Yayın şablonu), görevlerden otomatik ilerleme, gecikme uyarısı, build/sürüm notları (changelog) |
+| **Varlık Takibi** | Oyunun ihtiyaç duyduğu sprite, animasyon, model, ses, müzik listesi; Yapılacak → Konsept → Üretimde → İncelemede → Oyunda aşamaları, toplu ekleme, dosya bağlama, ilerleme çubuğu |
 | **Hata Takibi** | Önem derecesi, durum akışı, platform, sürüm, tekrar üretme adımları, ekran görüntüsü (Ctrl+V ile yapıştır) |
 | **Oyun Testleri** | Playtest oturumları, yıldızlı puanlama (eğlence, zorluk, anlaşılırlık…), geri bildirimi tek tıkla göreve dönüştürme |
 | **Tasarım Dokümanı (GDD)** | Hazır şablon bölümleri, Markdown editörü (bölünmüş önizleme), onay durumu, tam doküman görünümü, Markdown/PDF/JSON dışa aktarma |
@@ -56,7 +58,15 @@ Kayıtları tamamen kapatmak için: **Yönetim Paneli → Sistem → Yeni kayıt
 | **Profil & Ayarlar** | Profil fotoğrafı, unvan, yetenekler, durum mesajı, tema (Koyu / Açık / Gece Yarısı), vurgu rengi, ses ve açılış animasyonu tercihleri, şifre değiştirme, aktif oturumlar, kişisel istatistikler |
 | **Yönetim Paneli** | Hesap onayları, kullanıcı yönetimi (rol değiştirme, devre dışı bırakma, şifre sıfırlama, silme), **rol & yetki matrisi** (yeni rol oluşturma), sistem ayarları, yedek alma/geri yükleme, aktivite günlüğü |
 
-**Kısayollar:** `Ctrl+K` arama/komut paleti · `Alt+1..9` bölümler arası geçiş · Çizim panosunda `V B M E L A R O T N I` araçları · `Ctrl+Z / Ctrl+Y` geri al/yinele · `F11` tam ekran
+**Kısayollar:** `Ctrl+K` arama/komut paleti · `Ctrl+.` odak modu · `Ctrl+Shift+N` hızlı not · `Alt+1..9` bölümler arası geçiş · Çizim panosunda `V B M E L A R O T N I` araçları · `Ctrl+Z / Ctrl+Y` geri al/yinele · `F11` tam ekran
+
+### Göz konforu ve sade çalışma
+- **Odak modu** (`Ctrl+.` veya üst bardaki ◎ simgesi): menüler gizlenir, uygulama tam ekran olur; `Esc` ile çıkılır.
+- **Rahatsız etme** (profil menüsü): bildirim balonları ve sesler susar, yalnızca sizden @bahsedildiğinde haber verilir. Durumu “Odak modunda” yapmak da aynı etkiyi verir.
+- **Menüyü düzenle** (kenar menünün altındaki ayar simgesi veya bölüme sağ tık): kullanmadığınız bölümleri gizleyin, sık kullandıklarınızı ★ ile en üste alın, grup başlıklarına tıklayarak katlayın.
+- **Panoyu düzenle** (Pano'daki ayar simgesi): istemediğiniz kartları gizleyin.
+- **Göz dostu temalar** (Göz Dostu, Loş, Kağıt) ve **mavi ışık filtresi** (Profil → Görünüm).
+- Sürekli tekrarlanan dekoratif animasyonlar kaldırıldı; tüm animasyonlar tek tuşla kapatılabilir.
 
 ### Roller
 | Rol | Varsayılan yetkiler |
@@ -118,6 +128,7 @@ Ardından herkes `http://SUNUCU-ADRESİ:4321` adresine bağlanır (HTTPS için �
 - Masaüstü uygulamasında veriler: `%APPDATA%\Ayra Design\data\` (Windows)
 - Sunucu modunda: proje klasöründeki `data/` (veya `AYRA_DATA_DIR`)
 - `ayra-db.json` tüm veriyi, `uploads/` yüklenen dosyaları içerir. Her kayıtta otomatik `.bak` yedeği tutulur.
+- **Otomatik yedek:** Her gün otomatik yedek alınır, son 14 gün saklanır (`data/backups/`). Yönetim Paneli → Sistem'den indirilebilir.
 - **Yönetim Paneli → Sistem → Yedek indir** ile tek dosyalık yedek alıp **Yedekten geri yükle** ile geri dönebilirsiniz.
 
 ## 🛡 Güvenlik

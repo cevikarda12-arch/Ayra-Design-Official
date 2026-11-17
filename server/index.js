@@ -54,6 +54,9 @@ const COLLECTIONS = {
   wiki: { scoped: true, label: 'Wiki Sayfası', title: 'title' },
   sounds: { scoped: true, label: 'Ses Kaydı', title: 'name' },
   playtests: { scoped: true, label: 'Oyun Testi', title: 'title' },
+  milestones: { scoped: true, label: 'Kilometre Taşı', title: 'title' },
+  builds: { scoped: true, label: 'Sürüm', title: 'version' },
+  assets: { scoped: true, label: 'Varlık', title: 'name' },
 };
 
 // ---------------------------------------------------------------------------
@@ -74,6 +77,25 @@ function createServer(options = {}) {
     db.meta('settings', { registrationOpen: true, studioName: 'Ayra Design', welcomeMessage: 'Ayra Design stüdyosuna hoş geldin! Birlikte harika oyunlar tasarlayalım.' });
   }
   seed(db, bcrypt);
+
+  // ------------------------------------------------------------- otomatik yedekleme (günde bir, son 14 yedek)
+  const backupDir = path.join(dataDir, 'backups');
+  function autoBackup(force = false) {
+    try {
+      fs.mkdirSync(backupDir, { recursive: true });
+      const name = 'ayra-yedek-' + new Date().toISOString().slice(0, 10) + '.json';
+      const file = path.join(backupDir, name);
+      if (fs.existsSync(file) && !force) return null;
+      db.flush();
+      fs.writeFileSync(file, JSON.stringify(db.data));
+      const all = fs.readdirSync(backupDir).filter((f) => f.endsWith('.json')).sort();
+      all.slice(0, Math.max(0, all.length - 14)).forEach((f) => { try { fs.unlinkSync(path.join(backupDir, f)); } catch {} });
+      return name;
+    } catch (e) { console.error('[yedek]', e.message); return null; }
+  }
+  setTimeout(() => autoBackup(), 5000);
+  const backupTimer = setInterval(() => autoBackup(), 60 * 60 * 1000);
+  backupTimer.unref && backupTimer.unref();
 
   const app = express();
   const server = http.createServer(app);
@@ -434,6 +456,20 @@ function createServer(options = {}) {
 
   app.get('/api/admin/activity', auth, need('view_admin'), (req, res) => {
     res.json(db.col('activity').slice(-500).reverse());
+  });
+
+  app.get('/api/admin/backups', auth, need('manage_system'), (req, res) => {
+    let list = [];
+    try { list = fs.readdirSync(backupDir).filter((f) => f.endsWith('.json')).sort().reverse().map((f) => ({ name: f, size: fs.statSync(path.join(backupDir, f)).size })); } catch {}
+    res.json(list);
+  });
+  app.post('/api/admin/backups', auth, need('manage_system'), (req, res) => { const n = autoBackup(true); res.json({ ok: !!n, name: n }); });
+  app.get('/api/admin/backups/:name', auth, need('manage_system'), (req, res) => {
+    const name = path.basename(req.params.name);
+    const file = path.join(backupDir, name);
+    if (!/^ayra-yedek-[\d-]+\.json$/.test(name) || !fs.existsSync(file)) return res.status(404).json({ error: 'Yedek bulunamadı.' });
+    res.setHeader('Content-Disposition', `attachment; filename="${name}"`);
+    res.sendFile(file);
   });
 
   app.get('/api/admin/backup', auth, need('manage_system'), (req, res) => {

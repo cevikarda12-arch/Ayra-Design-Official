@@ -15,6 +15,8 @@
     async render(el, [openId]) {
       if (A.needProject(el)) return;
       let tasks = [];
+      let milestones = [];
+      const msOptions = (sel) => `<option value="">— Aşama yok —</option>` + milestones.map((m) => `<option value="${m.id}" ${m.id === sel ? 'selected' : ''}>${A.esc(m.title)}</option>`).join('');
       const f = A.ls.get('taskFilter', { q: '', who: '', cat: '', view: 'board' });
       el.innerHTML = `<div class="page-head"><div><h1>Görev Panosu</h1><p>${A.esc(A.project().name)} · görevleri sürükleyip bırakarak durumlarını değiştirin.</p></div>
         <div class="actions">
@@ -56,6 +58,7 @@
             ${t.due ? `<span class="badge ${t.status !== 'done' && d < 0 ? 'red' : t.status !== 'done' && d <= 2 ? 'yellow' : ''}">${A.icon('clock')}${A.fmtDate(t.due, { day: 'numeric', month: 'short' })}</span>` : ''}
             ${cl.length ? `<span class="badge ${cld === cl.length ? 'green' : ''}">${A.icon('list-checks')}${cld}/${cl.length}</span>` : ''}
             ${(t.comments || []).length ? `<span class="badge">${A.icon('message-circle')}${t.comments.length}</span>` : ''}
+            ${t.milestoneId && milestones.find((m) => m.id === t.milestoneId) ? `<span class="badge" style="color:${A.esc(milestones.find((m) => m.id === t.milestoneId).color || '#9b87f5')}">${A.icon('flag')}${A.esc(milestones.find((m) => m.id === t.milestoneId).title)}</span>` : ''}
             <span class="spacer"></span>${t.assignee ? A.avatar(t.assignee, 'xs') : ''}
           </div></div>`;
       };
@@ -126,7 +129,8 @@
             { key: 'priority', label: 'Öncelik', type: 'select', options: Object.entries(PRIO).map(([k, v]) => [k, v[0]]), value: 'medium', half: true },
             { key: 'assignee', label: 'Atanan kişi', type: 'html', html: `<select class="select" name="assignee">${A.userOptions('')}</select>`, half: true },
             { key: 'due', label: 'Teslim tarihi', type: 'date', half: true },
-            { key: 'tags', label: 'Etiketler (virgülle)', placeholder: 'karakter, animasyon' },
+            { key: 'milestoneId', label: 'Aşama (yol haritası)', type: 'html', html: `<select class="select" name="milestoneId">${msOptions('')}</select>`, half: true },
+            { key: 'tags', label: 'Etiketler (virgülle)', placeholder: 'karakter, animasyon', half: true },
           ],
         });
         if (!r) return;
@@ -162,6 +166,7 @@
               <div class="field"><label>Atanan</label><select class="select sm" id="mAssignee" ${dis}>${A.userOptions(t.assignee)}</select></div>
               <div class="field"><label>Öncelik</label><select class="select sm" id="mPrio" ${dis}>${Object.entries(PRIO).map(([k, v]) => `<option value="${k}" ${t.priority === k ? 'selected' : ''}>${v[0]}</option>`).join('')}</select></div>
               <div class="field"><label>Kategori</label><select class="select sm" id="mCat" ${dis}>${Object.keys(CATS).map((c) => `<option ${t.category === c ? 'selected' : ''}>${c}</option>`).join('')}</select></div>
+              <div class="field"><label>Aşama</label><select class="select sm" id="mMs" ${dis}>${msOptions(t.milestoneId)}</select></div>
               <div class="field"><label>Teslim tarihi</label><input type="date" class="input sm" id="mDue" value="${A.esc(t.due || '')}" ${dis}></div>
               <div class="field"><label>Tahmini süre (saat)</label><input type="number" min="0" class="input sm" id="mEst" value="${t.estimate || ''}" ${dis}></div>
               <div class="field"><label>Etiketler</label><input class="input sm" id="mTags" value="${A.esc((t.tags || []).join(', '))}" ${dis}></div>
@@ -195,6 +200,7 @@
           A.$('#mPrio', root).onchange = (e) => upd({ priority: e.target.value });
           A.$('#mCat', root).onchange = (e) => upd({ category: e.target.value });
           A.$('#mDue', root).onchange = (e) => upd({ due: e.target.value });
+          A.$('#mMs', root).onchange = (e) => upd({ milestoneId: e.target.value || null });
           A.$('#mEst', root).onchange = (e) => upd({ estimate: Number(e.target.value) || null });
           A.$('#mTags', root).onchange = (e) => upd({ tags: splitTags(e.target.value) });
           A.$('#clNew', root).onkeydown = (e) => { if (e.key === 'Enter' && e.target.value.trim()) { t.checklist = [...(t.checklist || []), { text: e.target.value.trim(), done: false }]; e.target.value = ''; upd({ checklist: t.checklist }); drawCl(); } };
@@ -204,7 +210,7 @@
         if (delB) delB.onclick = async () => { if (await A.confirm('Bu görev silinsin mi?')) { await A.col.remove('tasks', t.id).catch(A.err); m.close(); } };
       };
 
-      const load = async () => { tasks = await A.col.project('tasks'); draw(); };
+      const load = async () => { [tasks, milestones] = await Promise.all([A.col.project('tasks'), A.col.project('milestones')]); draw(); };
       await load();
       if (openId) openTask(openId);
       A.viewOn('db:tasks', (p) => {

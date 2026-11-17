@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('ayraDesktop', {
   notify: (title, body) => ipcRenderer.send('ayra:notify', { title, body }),
   setTitleBar: (color, symbolColor) => ipcRenderer.send('ayra:titlebar', { color, symbolColor }),
   setZoom: (f) => ipcRenderer.send('ayra:zoom', f),
+  setFullScreen: (on) => ipcRenderer.send('ayra:fullscreen', on),
   appInfo: () => ipcRenderer.invoke('ayra:appInfo'),
   checkUpdates: () => ipcRenderer.send('ayra:checkUpdates'),
   installUpdate: () => ipcRenderer.send('ayra:installUpdate'),

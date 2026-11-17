@@ -196,6 +196,7 @@ ipcMain.handle('ayra:setServer', async (e, url) => {
 });
 ipcMain.handle('ayra:appInfo', () => ({ version: app.getVersion(), packaged: app.isPackaged, update: updateState, closeToTray: readConfig().closeToTray !== false, openAtLogin: !!app.getLoginItemSettings().openAtLogin }));
 ipcMain.on('ayra:checkUpdates', () => checkUpdates(true));
+ipcMain.on('ayra:fullscreen', (e, on) => { if (win) win.setFullScreen(!!on); });
 ipcMain.on('ayra:installUpdate', installUpdate);
 ipcMain.on('ayra:zoom', (e, f) => { const z = Math.max(0.7, Math.min(1.5, Number(f) || 1)); if (win) win.webContents.setZoomFactor(z); });
 ipcMain.on('ayra:setDesktopPref', (e, { key, value }) => {

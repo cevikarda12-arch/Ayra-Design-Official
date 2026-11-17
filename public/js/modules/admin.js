@@ -152,7 +152,8 @@
             <p class="small muted">İnternet üzerinden erişim için sunucuyu bir buluta (ör. VPS) kurabilir veya port yönlendirme yapabilirsiniz. Ayrıntılar README dosyasında.</p></div>
           <div class="card"><div class="card-title">${A.icon('database')} Yedekleme</div>
             <p class="small muted" style="margin-top:0">Tüm verilerin (kullanıcılar, projeler, notlar, mesajlar...) tek bir JSON yedeği. Yüklenen dosyalar <code>${A.esc(o.dataDir)}</code> klasöründedir.</p>
-            ${canSys ? `<div class="row"><button class="btn" id="syBackup">${A.icon('download')} Yedek indir</button><button class="btn danger" id="syRestore">${A.icon('upload')} Yedekten geri yükle</button></div>` : '<p class="small">Yetkiniz yok.</p>'}</div>
+            ${canSys ? `<div class="row"><button class="btn" id="syBackup">${A.icon('download')} Yedek indir</button><button class="btn danger" id="syRestore">${A.icon('upload')} Yedekten geri yükle</button></div>
+            <div class="label" style="margin:16px 0 6px">Otomatik günlük yedekler <span class="muted">(son 14 gün saklanır)</span></div><div id="syAuto" class="small muted">Yükleniyor...</div>` : '<p class="small">Yetkiniz yok.</p>'}</div>
           <div class="card"><div class="card-title">${A.icon('activity')} Sistem durumu</div>
             <table class="table small"><tr><td class="muted">Çalışma süresi</td><td>${Math.floor(o.uptime / 3600)} sa ${Math.floor((o.uptime % 3600) / 60)} dk</td></tr><tr><td class="muted">Veritabanı boyutu</td><td>${A.fmtSize(o.dbSize)}</td></tr><tr><td class="muted">Node.js</td><td>${A.esc(o.node)}</td></tr>
             ${Object.entries(o.counts).map(([k, v]) => `<tr><td class="muted">${A.esc(k)}</td><td>${v}</td></tr>`).join('')}</table></div></div>`;
@@ -164,6 +165,17 @@
         if (reg && canSys) reg.onchange = async () => { try { await A.put('/api/admin/settings', { registrationOpen: reg.checked }); A.toast(reg.checked ? 'Kayıtlar açıldı' : 'Kayıtlar kapatıldı', 'ok'); } catch (e) { A.err(e); } };
         const bk = A.$('#syBackup', body);
         if (bk) bk.onclick = async () => { try { const d = await A.get('/api/admin/backup'); A.download(`ayra-yedek-${A.today()}.json`, JSON.stringify(d)); } catch (e) { A.err(e); } };
+        const auto = A.$('#syAuto', body);
+        if (auto) {
+          const drawAuto = async () => {
+            const list = await A.get('/api/admin/backups').catch(() => []);
+            auto.innerHTML = (list.length ? list.map((b) => `<div class="row lan" style="gap:8px">${A.icon('database')}<span class="grow mono">${A.esc(b.name)}</span><span>${A.fmtSize(b.size)}</span><button class="btn xs" data-bk="${A.esc(b.name)}">${A.icon('download')}</button></div>`).join('') : '<p>Henüz otomatik yedek yok.</p>') + `<button class="btn xs" id="syNow" style="margin-top:6px">${A.icon('save')} Şimdi yedekle</button>`;
+            A.icons(auto);
+            A.$$('[data-bk]', auto).forEach((b) => (b.onclick = async () => { try { const r = await fetch('/api/admin/backups/' + encodeURIComponent(b.dataset.bk), { headers: { Authorization: 'Bearer ' + A.state.token } }); if (!r.ok) throw new Error('İndirilemedi'); A.download(b.dataset.bk, await r.blob()); } catch (e) { A.err(e); } }));
+            A.$('#syNow', auto).onclick = async () => { await A.post('/api/admin/backups').catch(A.err); A.toast('Yedek alındı', 'ok'); drawAuto(); };
+          };
+          drawAuto();
+        }
         const rs = A.$('#syRestore', body);
         if (rs) rs.onclick = async () => {
           const f = await A.pickFile('application/json,.json');

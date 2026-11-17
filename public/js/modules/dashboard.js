@@ -33,6 +33,7 @@
             <button class="btn" data-q="notes">${A.icon('notebook-pen')} Not</button>
             <button class="btn" data-q="draw">${A.icon('pen-tool')} Çizim</button>
             <button class="btn" data-q="chat">${A.icon('messages-square')} Sohbet</button>
+            <button class="btn ghost icon" id="dEdit" title="Panoyu düzenle">${A.icon('sliders-horizontal')}</button>
           </div>
           <div class="dh-orbs"><i></i><i></i><i></i></div>
         </div>
@@ -46,6 +47,13 @@
           <div class="card" id="dTeam"></div>
         </div>`;
       A.icons(el);
+      const WIDGETS = [['quote', 'Günün sözü', '.dh-quote'], ['stats', 'İstatistik kartları', '#dStats'], ['ann', 'Duyurular', '#dAnn'], ['mine', 'Bana atananlar', '#dMine'], ['prog', 'Proje ilerlemesi', '#dProg'], ['events', 'Yaklaşanlar', '#dEvents'], ['act', 'Son aktiviteler', '#dAct'], ['team', 'Ekip', '#dTeam']];
+      const applyHidden = () => { const h = new Set((A.state.user.prefs || {}).dashHidden || []); WIDGETS.forEach(([k, , sel]) => { const n = A.$(sel, el); if (n) n.style.display = h.has(k) ? 'none' : ''; }); };
+      applyHidden();
+      A.$('#dEdit', el).onclick = (e) => {
+        const h = new Set((A.state.user.prefs || {}).dashHidden || []);
+        A.menu(e.currentTarget, [{ head: 'Panoda göster' }, ...WIDGETS.map(([k, l]) => ({ html: `${A.icon(h.has(k) ? 'square' : 'square-check-big')} ${l}`, action: async () => { const next = h.has(k) ? [...h].filter((x) => x !== k) : [...h, k]; await A.savePrefs({ dashHidden: next }); applyHidden(); } }))], { align: 'right' });
+      };
       A.$$('[data-q]', el).forEach((b) => (b.onclick = () => { A.go(b.dataset.q); if (b.dataset.q === 'tasks') setTimeout(() => A.emit('tasks:new'), 300); if (b.dataset.q === 'notes') setTimeout(() => A.emit('notes:new'), 300); }));
 
       const load = async () => {

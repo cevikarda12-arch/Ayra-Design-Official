@@ -83,8 +83,8 @@
     const prev = (t) => `<div class="tp-prev" style="background:${t.bg}"><i style="background:${t.panel}"></i><i style="background:${t.panel}"><s style="background:${t.text}"></s></i><b style="background:${t.accent}"></b><u style="background:${t.accent2}"></u></div>`;
     const draw = () => {
       const isCustom = cur() === 'custom';
-      b.innerHTML = `<div class="card"><div class="card-title">${A.icon('palette')} Hazır temalar</div>
-        <div class="theme-pick">${Object.entries(A.THEMES).map(([k, t]) => `<button data-th="${k}" class="${cur() === k ? 'on' : ''}">${prev(t)}${A.esc(t.name)}</button>`).join('')}
+      b.innerHTML = `<div class="card"><div class="card-title">${A.icon('palette')} Hazır temalar <span class="small muted">— 👁 işaretliler uzun süreli çalışma için düşük kontrastlı, göz dostu temalardır</span></div>
+        <div class="theme-pick">${Object.entries(A.THEMES).map(([k, t]) => `<button data-th="${k}" class="${cur() === k ? 'on' : ''}">${prev(t)}${t.eye ? '👁 ' : ''}${A.esc(t.name)}</button>`).join('')}
           <button data-th="custom" class="${isCustom ? 'on' : ''}">${prev(custom)}${A.icon('wand-2')} Özel tema</button></div>
         ${!isCustom ? `<div class="label" style="margin:20px 0 10px">Vurgu rengi</div>
         <div class="color-dots" id="lkAcc">${[base().accent, ...ACCENTS.filter((c) => c !== base().accent)].map((c) => `<button data-c="${c}" style="background:${c};width:32px;height:32px" class="${(p.accent || base().accent) === c ? 'on' : ''}"></button>`).join('')}<input type="color" id="lkCustom" value="${A.esc(p.accent || base().accent)}" title="Kendi rengini seç"></div>` : ''}
@@ -99,6 +99,7 @@
       <div class="card" style="margin-top:16px"><div class="card-title">${A.icon('sliders-horizontal')} Arayüz</div>
         <div class="pref-row"><div><b>Köşe yuvarlaklığı</b><div class="small muted">Keskin köşelerden yumuşak hatlara</div></div><div class="row" style="gap:10px"><input type="range" min="0" max="2" step="0.1" id="lkRad" value="${p.radius == null ? 1 : p.radius}"><span class="radius-demo"></span></div></div>
         ${A.desktop ? `<div class="pref-row"><div><b>Arayüz boyutu</b><div class="small muted">Yazı ve öğelerin büyüklüğü</div></div><div class="row" style="gap:10px"><input type="range" min="0.8" max="1.3" step="0.05" id="lkZoom" value="${p.uiScale || 1}"><b id="lkZoomV" class="small" style="width:44px">%${Math.round((p.uiScale || 1) * 100)}</b></div></div>` : ''}
+        <div class="pref-row"><div><b>Mavi ışık filtresi</b><div class="small muted">Ekranı sıcak tonlara çeker; gece çalışırken gözü yormaz</div></div><div class="row" style="gap:10px"><input type="range" min="0" max="0.4" step="0.02" id="lkWarm" value="${p.warm || 0}"><b id="lkWarmV" class="small" style="width:44px">%${Math.round(((p.warm || 0) / 0.4) * 100)}</b></div></div>
         <label class="pref-row"><div><b>Animasyonlar</b><div class="small muted">Geçiş ve hareket efektleri</div></div><label class="switch"><input type="checkbox" id="lkAnim" ${p.animations !== false ? 'checked' : ''}><span></span></label></label>
         <label class="pref-row"><div><b>Açılış animasyonu</b><div class="small muted">Uygulama açılırken Ayra Design animasyonunu göster</div></div><label class="switch"><input type="checkbox" id="lkIntro" ${p.intro !== false ? 'checked' : ''}><span></span></label></label>
         <label class="pref-row"><div><b>Arayüz sesleri</b><div class="small muted">Bildirim ve etkileşim sesleri</div></div><label class="switch"><input type="checkbox" id="lkSnd" ${p.sounds !== false ? 'checked' : ''}><span></span></label></label>
@@ -129,6 +130,7 @@
       };
       A.$('#lkRad', b).oninput = (e) => apply({ radius: Number(e.target.value) });
       const z = A.$('#lkZoom', b); if (z) z.oninput = (e) => { A.$('#lkZoomV', b).textContent = '%' + Math.round(e.target.value * 100); apply({ uiScale: Number(e.target.value) }); };
+      A.$('#lkWarm', b).oninput = (e) => { A.$('#lkWarmV', b).textContent = '%' + Math.round((e.target.value / 0.4) * 100); apply({ warm: Number(e.target.value) }); };
       A.$('#lkAnim', b).onchange = (e) => apply({ animations: e.target.checked });
       A.$('#lkIntro', b).onchange = (e) => { apply({ intro: e.target.checked }); A.ls.set('intro', e.target.checked); };
       A.$('#lkSnd', b).onchange = (e) => apply({ sounds: e.target.checked });

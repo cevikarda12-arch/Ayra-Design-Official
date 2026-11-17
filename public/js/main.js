@@ -31,7 +31,7 @@
       A.refreshChatUnread();
       const hour = new Date().getHours();
       const greet = hour < 6 ? 'İyi geceler' : hour < 12 ? 'Günaydın' : hour < 18 ? 'İyi günler' : 'İyi akşamlar';
-      A.toast(`${greet}, ${me.user.displayName}!`, 'ok', 'Hoş geldin');
+      if (!welcome) A.toast(`${greet}, ${me.user.displayName}!`, 'ok', 'Hoş geldin');
       if (me.user.mustChangePassword) forcePasswordChange();
     } catch (e) {
       console.error(e);

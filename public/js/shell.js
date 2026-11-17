@@ -18,6 +18,7 @@
         <div class="sb-foot">
           <button class="btn ghost icon sm" id="collapseBtn" title="Menüyü daralt">${A.icon('panel-left-close')}</button>
           <button class="btn ghost icon sm" id="themeBtn" title="Temayı değiştir">${A.icon('sun-moon')}</button>
+          <button class="btn ghost icon sm" id="navEditBtn" title="Menüyü düzenle">${A.icon('sliders-horizontal')}</button>
           <button class="btn ghost icon sm" id="logoutBtn" title="Çıkış yap" style="margin-left:auto">${A.icon('log-out')}</button>
         </div>
       </aside>
@@ -28,14 +29,21 @@
           <div id="timerChip"></div>
           <div id="updChip"></div>
           <div class="online-stack" id="onlineStack"></div>
+          <button class="btn ghost icon tb-btn" id="focusBtn" title="Odak modu (Ctrl + .)">${A.icon('focus')}</button>
           <button class="btn ghost icon tb-btn" id="notifBtn" title="Bildirimler">${A.icon('bell')}</button>
           <div class="me-btn" id="meBtn"></div>
         </header>
+        <div class="conn-bar hidden" id="connBar">${A.icon('wifi')} Sunucu bağlantısı koptu, yeniden bağlanılıyor...</div>
         <div class="view" id="view"></div>
-      </section>`;
+      </section>
+      <button class="focus-exit" id="focusExit" title="Odak modundan çık (Esc)">${A.icon('minimize-2')} Odak modu · çıkmak için Esc</button>`;
     A.icons(app);
     A.$('#collapseBtn').onclick = () => { app.classList.toggle('collapsed'); A.ls.set('collapsed', app.classList.contains('collapsed')); };
     A.$('#themeBtn').onclick = cycleTheme;
+    A.$('#navEditBtn').onclick = navEditor;
+    A.$('#focusBtn').onclick = () => A.toggleFocus();
+    A.$('#focusExit').onclick = () => A.toggleFocus(false);
+    renderDnd();
     A.$('#logoutBtn').onclick = async () => { if (await A.confirm('Oturumu kapatmak istiyor musunuz?', { title: 'Çıkış yap', ok: 'Çıkış yap', danger: false })) A.logout(); };
     A.$('#searchBtn').onclick = openPalette;
     A.$('#notifBtn').onclick = toggleNotifs;
@@ -74,24 +82,125 @@
     window.ayraDesktop.appInfo().then((i) => { A.appInfo = i; if (i.update) { A.updateState = i.update; A.renderUpdateChip(); } }).catch(() => {});
   }
 
+  const PINNED = ['dashboard', 'profile'];
+  A.isDnd = () => { const u = A.state.user || {}; return !!((u.prefs || {}).dnd || u.presence === 'focus'); };
   function renderNav() {
     const nav = A.$('#nav');
     if (!nav) return;
     const cur = A.current ? A.current.id : '';
+    const prefs = (A.state.user && A.state.user.prefs) || {};
+    const hidden = new Set((prefs.navHidden || []).filter((id) => !PINNED.includes(id)));
+    const favs = (prefs.navFav || []).filter((id) => A.modules[id] && !hidden.has(id));
+    const folded = new Set(A.ls.get('navFolded', ['yonetim']));
+    const ok = (m) => m && (!m.perm || A.can(m.perm)) && !hidden.has(m.id);
     let navIdx = 0;
-    nav.innerHTML = GROUPS.map(([g, label]) => {
-      const items = A.order.map((id) => A.modules[id]).filter((m) => m.group === g && (!m.perm || A.can(m.perm)));
+    const item = (m) => {
+      navIdx++;
+      const badge = m.id === 'chat' && A.unread.chat ? `<span class="badge count">${A.unread.chat}</span>` : m.id === 'admin' && A.unread.pending ? `<span class="badge count">${A.unread.pending}</span>` : '';
+      return `<button class="nav-item ${cur === m.id ? 'on' : ''}" style="--i:${navIdx}" data-go="${m.id}" title="${A.esc(m.title)}">${A.icon(m.icon)}<span>${A.esc(m.title)}</span>${badge}</button>`;
+    };
+    const group = (key, label, items) => {
       if (!items.length) return '';
-      return `<div class="sb-group">${label}</div>` + items.map((m) => {
-        navIdx++;
-        const badge = m.id === 'chat' && A.unread.chat ? `<span class="badge count">${A.unread.chat}</span>` : m.id === 'admin' && A.unread.pending ? `<span class="badge count">${A.unread.pending}</span>` : '';
-        return `<button class="nav-item ${cur === m.id ? 'on' : ''}" style="--i:${navIdx}" data-go="${m.id}" title="${A.esc(m.title)}">${A.icon(m.icon)}<span>${A.esc(m.title)}</span>${badge}</button>`;
-      }).join('');
-    }).join('');
+      const isFolded = folded.has(key) && !items.some((m) => m.id === cur);
+      const badgeSum = isFolded ? items.reduce((s, m) => s + (m.id === 'chat' ? A.unread.chat : m.id === 'admin' ? A.unread.pending : 0), 0) : 0;
+      return `<div class="sb-group ${isFolded ? 'folded' : ''}" data-fold="${key}"><span>${label}</span>${badgeSum ? `<i class="fold-dot"></i>` : ''}${A.icon('chevron-down')}</div><div class="sb-items ${isFolded ? 'folded' : ''}">${items.map(item).join('')}</div>`;
+    };
+    let html = favs.length ? group('fav', '★ Sık kullanılanlar', favs.map((id) => A.modules[id]).filter(ok)) : '';
+    html += GROUPS.map(([g, label]) => group(g, label, A.order.map((id) => A.modules[id]).filter((m) => m.group === g && ok(m) && !favs.includes(m.id)))).join('');
+    nav.innerHTML = html;
     A.icons(nav);
-    A.$$('[data-go]', nav).forEach((b) => (b.onclick = () => A.go(b.dataset.go)));
+    A.$$('[data-go]', nav).forEach((b) => {
+      b.onclick = () => A.go(b.dataset.go);
+      b.oncontextmenu = (e) => { e.preventDefault(); navItemMenu(b.dataset.go, e); };
+    });
+    A.$$('[data-fold]', nav).forEach((g) => (g.onclick = () => {
+      const f = new Set(A.ls.get('navFolded', ['yonetim']));
+      f.has(g.dataset.fold) ? f.delete(g.dataset.fold) : f.add(g.dataset.fold);
+      A.ls.set('navFolded', [...f]);
+      renderNav();
+    }));
   }
+  function navItemMenu(id, e) {
+    const prefs = A.state.user.prefs || {};
+    const fav = (prefs.navFav || []).includes(id);
+    A.menu({ x: e.clientX, y: e.clientY }, [
+      { head: A.modules[id].title },
+      { icon: 'star', label: fav ? 'Sık kullanılanlardan çıkar' : 'Sık kullanılanlara ekle', action: () => saveNav({ navFav: fav ? prefs.navFav.filter((x) => x !== id) : [...(prefs.navFav || []), id] }) },
+      ...(PINNED.includes(id) ? [] : [{ icon: 'eye-off', label: 'Menüden gizle', action: () => { saveNav({ navHidden: [...(prefs.navHidden || []), id] }); A.toast(`“${A.modules[id].title}” gizlendi. Geri getirmek için menünün altındaki ayar simgesini kullanın.`, 'info'); } }] ),
+      '-',
+      { icon: 'sliders-horizontal', label: 'Menüyü düzenle...', action: navEditor },
+    ]);
+  }
+  async function saveNav(patch) { await A.savePrefs(patch); renderNav(); }
+  function navEditor() {
+    const prefs = A.state.user.prefs || {};
+    let hidden = new Set(prefs.navHidden || []), favs = new Set(prefs.navFav || []);
+    const mods = A.order.map((id) => A.modules[id]).filter((m) => m.group && (!m.perm || A.can(m.perm)));
+    const m = A.modal({
+      title: 'Menüyü düzenle', icon: 'sliders-horizontal',
+      body: `<p class="small muted" style="margin-top:0">Kullanmadığınız bölümleri gizleyin, sık kullandıklarınızı ★ ile en üste sabitleyin. Gizlenen bölümlere Ctrl+K aramasından yine ulaşabilirsiniz.</p>
+        <div class="nav-edit">${GROUPS.map(([g, label]) => { const items = mods.filter((x) => x.group === g); return items.length ? `<div class="label" style="margin:12px 0 6px">${label}</div>` + items.map((x) => `<div class="ne-row"><span class="row grow" style="gap:10px">${A.icon(x.icon)}${A.esc(x.title)}</span><button class="btn xs ghost ne-fav ${favs.has(x.id) ? 'on' : ''}" data-fav="${x.id}" title="Sık kullanılan">★</button>${PINNED.includes(x.id) ? '<span class="small muted" style="width:42px;text-align:center">sabit</span>' : `<label class="switch"><input type="checkbox" data-vis="${x.id}" ${hidden.has(x.id) ? '' : 'checked'}><span></span></label>`}</div>`).join('') : ''; }).join('')}</div>`,
+      foot: `<button class="btn ghost" id="neReset">Varsayılan</button><span class="spacer"></span><button class="btn" data-close>Vazgeç</button><button class="btn primary" id="neSave">Kaydet</button>`,
+    });
+    A.$$('[data-fav]', m.el).forEach((b) => (b.onclick = () => { favs.has(b.dataset.fav) ? favs.delete(b.dataset.fav) : favs.add(b.dataset.fav); b.classList.toggle('on'); }));
+    A.$$('[data-vis]', m.el).forEach((c) => (c.onchange = () => (c.checked ? hidden.delete(c.dataset.vis) : hidden.add(c.dataset.vis))));
+    A.$('#neReset', m.el).onclick = () => { saveNav({ navHidden: [], navFav: [] }); m.close(); };
+    A.$('#neSave', m.el).onclick = () => { saveNav({ navHidden: [...hidden], navFav: [...favs] }); m.close(); A.toast('Menü güncellendi', 'ok'); };
+  }
+  A.navEditor = navEditor;
   A.renderNav = renderNav;
+
+  // ---------------------------------------------------------------- odak modu
+  A.toggleFocus = (on) => {
+    const root = document.documentElement;
+    const next = on === undefined ? !root.classList.contains('focus-mode') : !!on;
+    root.classList.toggle('focus-mode', next);
+    if (window.ayraDesktop && window.ayraDesktop.setFullScreen) window.ayraDesktop.setFullScreen(next);
+    else if (next && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+    else if (!next && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 350);
+  };
+  document.addEventListener('keydown', (e) => {
+    if (!A.state.user) return;
+    if ((e.ctrlKey || e.metaKey) && e.key === '.') { e.preventDefault(); A.toggleFocus(); }
+    if (e.key === 'Escape' && document.documentElement.classList.contains('focus-mode') && !A.$('.modal-back') && !A.$('.cmdk') && !A.$('#intro')) A.toggleFocus(false);
+  });
+
+  // ---------------------------------------------------------------- hızlı not (Ctrl+Shift+N)
+  A.quickNote = () => {
+    if (A.$('.qn-modal')) return;
+    A.modal({
+      title: 'Hızlı not', icon: 'notebook-pen', size: 'qn-modal',
+      body: `<textarea class="textarea" id="qnText" rows="6" placeholder="Aklına geleni yaz, sonra düzenlersin... (Ctrl+Enter ile kaydet)"></textarea><div class="small muted" style="margin-top:6px">“Hızlı Notlar” klasörüne özel not olarak kaydedilir.</div>`,
+      foot: `<button class="btn" data-close>Vazgeç</button><button class="btn primary" id="qnSave">${A.icon('check')} Kaydet</button>`,
+      onOpen: (m) => {
+        const ta = A.$('#qnText', m.el);
+        const save = async () => {
+          const text = ta.value.trim();
+          if (!text) return m.close();
+          const title = text.split('\n')[0].replace(/^#+\s*/, '').slice(0, 60) || 'Hızlı not';
+          try { await A.col.create('notes', { title, content: text, private: true, folder: 'Hızlı Notlar', tags: [], pinned: false }); m.close(); A.toast('Not kaydedildi', 'ok'); } catch (e) { A.err(e); }
+        };
+        A.$('#qnSave', m.el).onclick = save;
+        ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); save(); } });
+      },
+    });
+  };
+  document.addEventListener('keydown', (e) => {
+    if (A.state.user && (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'n') { e.preventDefault(); A.quickNote(); }
+  });
+
+  // ---------------------------------------------------------------- rahatsız etme
+  function renderDnd() {
+    const b = A.$('#notifBtn');
+    if (!b) return;
+    b.classList.toggle('dnd', A.isDnd());
+    b.title = A.isDnd() ? 'Bildirimler (Rahatsız etme açık)' : 'Bildirimler';
+    const i = b.querySelector('svg, i');
+    if (i) { i.outerHTML = A.icon(A.isDnd() ? 'bell-off' : 'bell'); A.icons(b); }
+  }
+  A.renderDnd = renderDnd;
+  A.toggleDnd = async () => { await A.savePrefs({ dnd: !((A.state.user.prefs || {}).dnd) }); renderDnd(); A.toast(A.isDnd() ? 'Rahatsız etme açık — yalnızca senden bahsedilince haber verilir' : 'Bildirimler açık', 'info'); };
 
   function renderMe() {
     const u = A.state.user;
@@ -151,6 +260,9 @@
     coffee: { name: 'Kahve', base: 'dark', bg: '#15100c', panel: '#211913', text: '#f3e9df', accent: '#d4a373', accent2: '#e9c46a' },
     sakura: { name: 'Sakura', base: 'light', bg: '#fff4f7', panel: '#ffffff', text: '#3a1f2b', accent: '#e64980', accent2: '#ae3ec9' },
     sand: { name: 'Kum', base: 'light', bg: '#f6f1e7', panel: '#fffdf8', text: '#2e2619', accent: '#c26a2c', accent2: '#2f9e44' },
+    soft: { name: 'Göz Dostu', base: 'dark', bg: '#1b1a17', panel: '#24221e', text: '#d6cfc1', accent: '#c9a86a', accent2: '#8fb996', eye: true },
+    dim: { name: 'Loş', base: 'dark', bg: '#1d2130', panel: '#252a3b', text: '#c5cbd9', accent: '#8ea3d9', accent2: '#7cc4b0', eye: true },
+    paper: { name: 'Kağıt', base: 'light', bg: '#efe8d8', panel: '#f8f2e4', text: '#3b3326', accent: '#8a6d3b', accent2: '#5b8a72', eye: true },
   };
   const hexRgb = (h) => { h = String(h || '#000').replace('#', ''); if (h.length === 3) h = h.split('').map((c) => c + c).join(''); const n = parseInt(h, 16) || 0; return [n >> 16, (n >> 8) & 255, n & 255]; };
   const rgbHex = (r) => '#' + r.map((x) => Math.round(Math.max(0, Math.min(255, x))).toString(16).padStart(2, '0')).join('');
@@ -182,8 +294,12 @@
     Object.entries(v).forEach(([k, val]) => root.style.setProperty(k, val));
     root.dataset.theme = dark ? (prefs.theme === 'midnight' ? 'midnight' : 'dark') : 'light';
     root.classList.toggle('no-anim', prefs.animations === false);
+    let warm = document.getElementById('warmFilter');
+    const w = Math.max(0, Math.min(0.45, Number(prefs.warm) || 0));
+    if (w > 0) { if (!warm) { warm = document.createElement('div'); warm.id = 'warmFilter'; document.body.appendChild(warm); } warm.style.opacity = w; }
+    else if (warm) warm.remove();
     if (window.ayraDesktop && window.ayraDesktop.setZoom) window.ayraDesktop.setZoom(Number(prefs.uiScale) || 1);
-    A.ls.set('appearance', { theme: prefs.theme, accent: prefs.accent, customTheme: prefs.customTheme, radius: prefs.radius, uiScale: prefs.uiScale, animations: prefs.animations });
+    A.ls.set('appearance', { warm: prefs.warm, theme: prefs.theme, accent: prefs.accent, customTheme: prefs.customTheme, radius: prefs.radius, uiScale: prefs.uiScale, animations: prefs.animations });
     A.syncTitleBar();
   };
   A.applyTheme = (theme, accent) => A.applyAppearance({ ...((A.state.user && A.state.user.prefs) || {}), theme, ...(accent ? { accent } : {}) });
@@ -202,10 +318,13 @@
 
   function meMenu(anchor) {
     const u = A.state.user;
-    const pres = (p) => ({ html: `<i class="pres ${p}" style="position:static;display:inline-block;width:10px;height:10px;border-radius:50%;border:0"></i>${A.PRESENCE[p]} ${u.presence === p ? A.icon('check') : ''}`, action: async () => { const r = await A.put('/api/me', { presence: p }); A.state.user = r.user; A.state.users.set(u.id, { ...A.state.users.get(u.id), ...r.user }); renderMe(); renderOnline(); } });
+    const pres = (p) => ({ html: `<i class="pres ${p}" style="position:static;display:inline-block;width:10px;height:10px;border-radius:50%;border:0"></i>${A.PRESENCE[p]} ${u.presence === p ? A.icon('check') : ''}`, action: async () => { const r = await A.put('/api/me', { presence: p }); A.state.user = r.user; A.state.users.set(u.id, { ...A.state.users.get(u.id), ...r.user }); renderMe(); renderOnline(); renderDnd(); } });
     A.menu(anchor, [
       { head: '@' + u.username },
       pres('online'), pres('busy'), pres('away'), pres('focus'),
+      '-',
+      { html: `${A.icon((u.prefs || {}).dnd ? 'bell' : 'bell-off')} ${(u.prefs || {}).dnd ? 'Rahatsız etme: kapat' : 'Rahatsız etme: aç'}`, action: () => A.toggleDnd() },
+      { icon: 'focus', label: 'Odak modu (Ctrl + .)', action: () => A.toggleFocus() },
       '-',
       { icon: 'circle-user-round', label: 'Profil ve ayarlar', action: () => A.go('profile') },
       ...(A.can('view_admin') ? [{ icon: 'shield-check', label: 'Yönetim paneli', action: () => A.go('admin') }] : []),
@@ -216,7 +335,7 @@
   }
 
   function shortcutsHelp() {
-    const rows = [['Ctrl + K', 'Hızlı arama / komut paleti'], ['Alt + 1..9', 'Menüdeki bölümler arasında geçiş'], ['Ctrl + Z / Ctrl + Y', 'Çizim ve piksel editöründe geri al / yinele'], ['B, E, L, R, O, T', 'Çizim panosunda araçlar (fırça, silgi, çizgi, dikdörtgen, elips, yazı)'], ['Boşluk + sürükle', 'Çizim panosunda kaydırma'], ['Enter', 'Sohbette mesaj gönder (Shift+Enter yeni satır)'], ['Esc', 'Pencereleri kapat']];
+    const rows = [['Ctrl + K', 'Hızlı arama / komut paleti'], ['Ctrl + .', 'Odak modu (menüleri gizle, tam ekran)'], ['Ctrl + Shift + N', 'Hızlı not'], ['Sağ tık (menüde)', 'Bölümü sık kullanılanlara ekle / gizle'], ['Alt + 1..9', 'Menüdeki bölümler arasında geçiş'], ['Ctrl + Z / Ctrl + Y', 'Çizim ve piksel editöründe geri al / yinele'], ['B, E, L, R, O, T', 'Çizim panosunda araçlar (fırça, silgi, çizgi, dikdörtgen, elips, yazı)'], ['Boşluk + sürükle', 'Çizim panosunda kaydırma'], ['Enter', 'Sohbette mesaj gönder (Shift+Enter yeni satır)'], ['Esc', 'Pencereleri kapat']];
     A.modal({ title: 'Klavye Kısayolları', icon: 'keyboard', body: `<table class="table">${rows.map(([k, v]) => `<tr><td><kbd>${k}</kbd></td><td>${v}</td></tr>`).join('')}</table>` });
   }
 
@@ -286,6 +405,11 @@
     const nav = A.order.map((id) => A.modules[id]).filter((m) => !m.perm || A.can(m.perm)).map((m) => ({ icon: m.icon, title: m.title, label: 'Bölüm', run: () => A.go(m.id) }));
     const actions = [
       { icon: 'plus', title: 'Yeni görev oluştur', label: 'Eylem', run: () => { A.go('tasks'); setTimeout(() => A.emit('tasks:new'), 300); } },
+      { icon: 'zap', title: 'Hızlı not (Ctrl+Shift+N)', label: 'Eylem', run: () => A.quickNote() },
+      { icon: 'focus', title: 'Odak modu (Ctrl+.)', label: 'Eylem', run: () => A.toggleFocus() },
+      { icon: 'bell-off', title: 'Rahatsız etme modunu aç/kapat', label: 'Eylem', run: () => A.toggleDnd() },
+      { icon: 'sliders-horizontal', title: 'Menüyü düzenle', label: 'Eylem', run: () => A.navEditor() },
+      { icon: 'flag', title: 'Yeni sürüm notu ekle', label: 'Eylem', run: () => A.go('roadmap/builds') },
       { icon: 'notebook-pen', title: 'Yeni not oluştur', label: 'Eylem', run: () => { A.go('notes'); setTimeout(() => A.emit('notes:new'), 300); } },
       { icon: 'bug', title: 'Hata bildir', label: 'Eylem', run: () => { A.go('bugs'); setTimeout(() => A.emit('bugs:new'), 300); } },
       { icon: 'sun-moon', title: 'Temayı değiştir', label: 'Eylem', run: cycleTheme },
@@ -301,8 +425,8 @@
       A.icons(list);
       A.$$('.cmdk-item', list).forEach((d) => { d.onclick = () => { close(); items[d.dataset.i].run(); }; d.onmousemove = () => { if (sel !== +d.dataset.i) { sel = +d.dataset.i; A.$$('.cmdk-item', list).forEach((x, j) => x.classList.toggle('sel', j === sel)); } }; });
     };
-    const ICON = { tasks: 'check-square', notes: 'sticky-note', gdd: 'book-open', bugs: 'bug', entities: 'swords', levels: 'map', dialogues: 'git-branch', events: 'calendar-days', ideas: 'lightbulb', files: 'folder', drawings: 'pen-tool', pixelart: 'grid-3x3', users: 'user', rooms: 'hash', wiki: 'library', projects: 'folder-kanban', announcements: 'megaphone', playtests: 'flask-conical', palettes: 'palette', sounds: 'music' };
-    const ROUTE = { tasks: 'tasks', notes: 'notes', gdd: 'gdd', bugs: 'bugs', entities: 'entities', levels: 'levels', dialogues: 'dialogues', events: 'calendar', ideas: 'ideas', files: 'files', drawings: 'draw', pixelart: 'pixel', users: 'team', rooms: 'chat', wiki: 'wiki', projects: 'projects', announcements: 'dashboard', playtests: 'playtests', palettes: 'tools', sounds: 'files' };
+    const ICON = { tasks: 'check-square', notes: 'sticky-note', gdd: 'book-open', bugs: 'bug', entities: 'swords', levels: 'map', dialogues: 'git-branch', events: 'calendar-days', ideas: 'lightbulb', files: 'folder', drawings: 'pen-tool', pixelart: 'grid-3x3', users: 'user', rooms: 'hash', wiki: 'library', projects: 'folder-kanban', announcements: 'megaphone', playtests: 'flask-conical', palettes: 'palette', sounds: 'music', milestones: 'flag', builds: 'package', assets: 'boxes' };
+    const ROUTE = { tasks: 'tasks', notes: 'notes', gdd: 'gdd', bugs: 'bugs', entities: 'entities', levels: 'levels', dialogues: 'dialogues', events: 'calendar', ideas: 'ideas', files: 'files', drawings: 'draw', pixelart: 'pixel', users: 'team', rooms: 'chat', wiki: 'wiki', projects: 'projects', announcements: 'dashboard', playtests: 'playtests', palettes: 'tools', sounds: 'files', milestones: 'roadmap', builds: 'roadmap/builds', assets: 'assets' };
     const search = A.debounce(async () => {
       const q = input.value.trim();
       if (q.length < 2) return draw();
@@ -351,8 +475,9 @@
     A.state.socket = s;
     let wasDown = false;
     s.on('connect_error', (e) => { if (e.message === 'unauthorized') A.logout('Oturumunuz sona erdi.'); });
-    s.on('disconnect', () => { wasDown = true; });
-    s.on('connect', () => { if (wasDown) { A.toast('Sunucu bağlantısı yeniden kuruldu', 'ok'); A.emit('reconnect'); } });
+    let downTimer = null;
+    s.on('disconnect', () => { wasDown = true; clearTimeout(downTimer); downTimer = setTimeout(() => { const c = A.$('#connBar'); if (c) c.classList.remove('hidden'); }, 2500); });
+    s.on('connect', () => { clearTimeout(downTimer); const c = A.$('#connBar'); if (c) c.classList.add('hidden'); if (wasDown) { A.toast('Sunucu bağlantısı yeniden kuruldu', 'ok'); A.emit('reconnect'); wasDown = false; } });
     s.on('presence', (ids) => { A.state.online = new Set(ids); renderOnline(); A.emit('presence'); });
     s.on('user:updated', (u) => {
       A.state.users.set(u.id, { ...(A.state.users.get(u.id) || {}), ...u });
@@ -374,6 +499,8 @@
       A.emit('db', p);
     });
     s.on('notification', (n) => {
+      const important = n.icon === 'at-sign' || n.icon === 'user-plus';
+      if (A.isDnd() && !important) { refreshNotifCount(); return; }
       A.toast(n.text, 'info', 'Bildirim');
       refreshNotifCount();
       const btn = A.$('#notifBtn');

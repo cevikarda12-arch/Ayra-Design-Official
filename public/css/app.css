@@ -543,3 +543,37 @@ html.desktop #updChip { -webkit-app-region: no-drag; }
 .app.app-enter .topbar > * { animation: fadeUp .45s var(--ease) both; animation-delay: .55s; }
 .app.app-enter .view { animation: aeView .9s cubic-bezier(.2,.9,.2,1) .35s both; }
 @keyframes aeView { from { opacity: 0; transform: translateY(30px) scale(.98); } }
+
+/* ---------------------------------------------------------------- menü: katlanabilir gruplar, favoriler */
+.sb-group { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; border-radius: 6px; transition: color .2s; }
+.sb-group:hover { color: var(--text-2); }
+.sb-group svg.lucide { width: 13px; height: 13px; margin-left: auto; transition: transform .25s var(--ease); opacity: .6; }
+.sb-group.folded svg.lucide { transform: rotate(-90deg); }
+.sb-group .fold-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pink); }
+.sb-items { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .3s var(--ease); }
+.sb-items > * { min-height: 0; }
+.sb-items { overflow: hidden; }
+.sb-items.folded { display: none; }
+.app.collapsed .sb-items.folded { display: grid; }
+.nav-edit { max-height: 55vh; overflow-y: auto; padding-right: 4px; }
+.ne-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; }
+.ne-row:hover { background: var(--panel-2); }
+.ne-row svg.lucide { width: 16px; color: var(--muted); }
+.ne-fav { font-size: 16px; color: var(--muted); }
+.ne-fav.on { color: var(--yellow); }
+.tb-btn.dnd { color: var(--muted); }
+
+/* ---------------------------------------------------------------- odak modu */
+html.focus-mode .sidebar, html.focus-mode .topbar { display: none; }
+html.focus-mode .app { grid-template-columns: 1fr; }
+.focus-exit { display: none; }
+html.focus-mode .focus-exit { display: inline-flex; align-items: center; gap: 8px; position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1200; padding: 6px 14px; border-radius: 99px; border: 1px solid var(--line-2); background: var(--glass); backdrop-filter: blur(10px); color: var(--muted); font-size: 12px; cursor: pointer; opacity: .25; transition: opacity .3s; -webkit-app-region: no-drag; }
+html.focus-mode .focus-exit:hover { opacity: 1; color: var(--text); }
+.focus-exit svg.lucide { width: 14px; height: 14px; }
+
+/* ---------------------------------------------------------------- bağlantı uyarısı ve mavi ışık filtresi */
+.conn-bar { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 6px; font-size: 12px; background: color-mix(in srgb, var(--orange) 18%, var(--panel)); color: var(--orange); border-bottom: 1px solid var(--line); animation: fadeUp .3s; }
+.conn-bar svg.lucide { width: 14px; height: 14px; animation: pulse 1.5s infinite; }
+#warmFilter { position: fixed; inset: 0; z-index: 99999; pointer-events: none; background: rgb(255, 140, 40); mix-blend-mode: multiply; transition: opacity .3s; }
+
+.modal.qn-modal { max-width: 520px; }
