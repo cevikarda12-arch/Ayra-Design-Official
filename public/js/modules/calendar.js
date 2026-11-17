@@ -66,6 +66,7 @@
       let editingEv = null;
       const edit = async (ev) => {
         if (!ev) return;
+        if (ev._ms) return A.go('roadmap');
         const isNew = !ev.id;
         if (!isNew && !A.canEdit(ev)) {
           const t = TYPES[ev.type] || TYPES.other;
@@ -99,11 +100,17 @@
         if (ev) A.confirm(`“${ev.title}” silinsin mi?`).then((ok) => ok && A.col.remove('events', ev.id).catch(A.err));
       }
 
-      const load = async () => { [events, tasks] = await Promise.all([A.col.list('events'), A.col.list('tasks')]); draw(); };
+      const load = async () => {
+        let ms;
+        [events, tasks, ms] = await Promise.all([A.col.list('events'), A.col.list('tasks'), A.col.list('milestones')]);
+        events = [...events, ...ms.filter((m) => m.end).map((m) => ({ id: 'ms-' + m.id, _ms: true, title: '🏁 ' + m.title, date: m.end, type: 'milestone', color: m.color || '#9b87f5', projectId: m.projectId, description: m.description }))];
+        draw();
+      };
       await load();
       const reload = A.debounce(load, 300);
       A.viewOn('db:events', reload);
       A.viewOn('db:tasks', reload);
+      A.viewOn('db:milestones', reload);
       this.destroy = () => document.removeEventListener('click', delHandler);
     },
   });

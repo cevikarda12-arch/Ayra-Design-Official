@@ -56,11 +56,13 @@
       };
       A.$$('[data-q]', el).forEach((b) => (b.onclick = () => { A.go(b.dataset.q); if (b.dataset.q === 'tasks') setTimeout(() => A.emit('tasks:new'), 300); if (b.dataset.q === 'notes') setTimeout(() => A.emit('notes:new'), 300); }));
 
+      let milestones = [];
       const load = async () => {
         const pid = A.state.projectId;
-        const [tasks, bugs, events, anns, acts] = await Promise.all([
-          pid ? A.col.project('tasks') : [], pid ? A.col.project('bugs') : [], A.col.list('events'), A.col.list('announcements'), A.get('/api/activity'),
+        const [tasks, bugs, events, anns, acts, ms] = await Promise.all([
+          pid ? A.col.project('tasks') : [], pid ? A.col.project('bugs') : [], A.col.list('events'), A.col.list('announcements'), A.get('/api/activity'), pid ? A.col.project('milestones') : [],
         ]);
+        milestones = ms;
         stats(tasks, bugs, events);
         announcements(anns);
         mine(tasks, bugs);
@@ -143,7 +145,9 @@
         const cats = {};
         tasks.forEach((t) => (cats[t.category || 'Diğer'] = (cats[t.category || 'Diğer'] || 0) + 1));
         const maxC = Math.max(1, ...Object.values(cats));
-        box.innerHTML = `<div class="card-title">${A.icon('trending-up')} Proje İlerlemesi</div>
+        const act = milestones.filter((m) => m.status !== 'done' && m.end).sort((a, b) => a.end.localeCompare(b.end))[0];
+        const actLine = act ? (() => { const t = tasks.filter((x) => x.milestoneId === act.id); const d = t.filter((x) => x.status === 'done').length; const left = A.daysUntil(act.end); return `<div class="dash-ms" onclick="A.go('roadmap')" style="--c:${A.esc(act.color || '#9b87f5')}">${A.icon('flag')}<div class="grow"><b>${A.esc(act.title)}</b><div class="small muted">${d}/${t.length} görev · ${left >= 0 ? left + ' gün kaldı' : Math.abs(left) + ' gün gecikti'}</div></div>${A.icon('chevron-right')}</div>`; })() : '';
+        box.innerHTML = `<div class="card-title">${A.icon('trending-up')} Proje İlerlemesi</div>${actLine}
           <div class="ring-wrap"><svg viewBox="0 0 120 120" class="ring"><circle cx="60" cy="60" r="50" class="rbg"/><circle cx="60" cy="60" r="50" class="rfg" style="stroke-dasharray:314;stroke-dashoffset:314" data-off="${314 - (314 * pct) / 100}"/></svg><div class="ring-txt"><b>%${pct}</b><span>tamamlandı</span></div>
           <div class="ring-legend">${[['todo', 'Yapılacak', '#868e96'], ['progress', 'Devam ediyor', '#4dabf7'], ['review', 'İncelemede', '#ffa94d'], ['done', 'Tamamlandı', '#20c997']].map(([k, l, c]) => `<div><i style="background:${c}"></i>${l}<b>${st[k] || 0}</b></div>`).join('')}</div></div>
           <div class="bars">${Object.entries(cats).map(([k, v]) => `<div class="bar-row"><span>${A.esc(k)}</span><div class="progress grow"><i style="width:0" data-w="${(v / maxC) * 100}%"></i></div><b>${v}</b></div>`).join('')}</div>`;
@@ -159,6 +163,7 @@
         if (!box) return;
         const list = [
           ...events.map((e) => ({ title: e.title, date: e.date, color: e.color, kind: 'Etkinlik' })),
+          ...milestones.filter((m) => m.end && m.status !== 'done').map((m) => ({ title: '🏁 ' + m.title, date: m.end, color: m.color, kind: 'Kilometre taşı bitişi' })),
           ...tasks.filter((t) => t.due && t.status !== 'done').map((t) => ({ title: t.title, date: t.due, color: '#9b87f5', kind: 'Görev teslimi' })),
         ].filter((x) => A.daysUntil(x.date) >= 0).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 6);
         box.innerHTML = `<div class="card-title">${A.icon('calendar-days')} Yaklaşanlar<div class="actions"><button class="btn xs ghost" onclick="A.go('calendar')">Takvim ${A.icon('arrow-right')}</button></div></div>
@@ -185,7 +190,7 @@
 
       await load();
       const reload = A.debounce(load, 500);
-      A.viewOn('db', (p) => { if (['tasks', 'bugs', 'events', 'announcements'].includes(p.col)) reload(); });
+      A.viewOn('db', (p) => { if (['tasks', 'bugs', 'events', 'announcements', 'milestones'].includes(p.col)) reload(); });
       A.viewOn('activity', (a) => {
         if (a.kind === 'auth' || a.kind === 'admin') return;
         const list = A.$('.act-list', el);
