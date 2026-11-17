@@ -1,0 +1,68 @@
+{
+  "name": "ayra-design",
+  "productName": "Ayra Design",
+  "version": "1.0.0",
+  "description": "Ayra Design — oyun tasarım ekipleri için animasyonlu, hepsi bir arada stüdyo uygulaması",
+  "main": "electron/main.js",
+  "author": "Ayra Design",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "server": "node server/index.js",
+    "test": "node tests/api.test.js",
+    "dist:win": "electron-builder --win nsis portable",
+    "dist:mac": "electron-builder --mac dmg",
+    "dist:linux": "electron-builder --linux AppImage"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.22.3",
+    "socket.io": "^4.8.4"
+  },
+  "build": {
+    "appId": "com.ayradesign.studio",
+    "productName": "Ayra Design",
+    "copyright": "© Ayra Design",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**",
+      "server/**",
+      "public/**",
+      "build/icon.png",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Ayra Design",
+      "installerLanguages": [
+        "tr_TR"
+      ],
+      "language": "1055"
+    },
+    "mac": {
+      "icon": "build/icon.png",
+      "category": "public.app-category.productivity"
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "category": "Development"
+    }
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  }
+}
