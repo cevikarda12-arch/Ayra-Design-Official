@@ -1,6 +1,6 @@
 // Ayra Design — masaüstü uygulaması (Electron)
 // Yerel modda gömülü sunucuyu başlatır; uzak modda ekibin sunucusuna bağlanır.
-const { app, BrowserWindow, ipcMain, shell, Notification, dialog, Menu, nativeImage, Tray } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, Notification, dialog, Menu, nativeImage, Tray, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -41,12 +41,41 @@ async function targetUrl() {
   return startLocalServer();
 }
 
+// ---------------------------------------------------------------- açılış: küçük pencere -> büyüme
+const SPLASH = { width: 640, height: 440 };
+let splashing = false;
+let grown = true;
+function growWindow() {
+  if (!win || grown) return;
+  grown = true;
+  const from = win.getBounds();
+  const wa = screen.getDisplayMatching(from).workArea;
+  const to = { x: wa.x, y: wa.y, width: wa.width, height: wa.height };
+  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const dur = 750, t0 = Date.now();
+  win.setResizable(true);
+  const timer = setInterval(() => {
+    if (!win || win.isDestroyed()) return clearInterval(timer);
+    const k = ease(Math.min(1, (Date.now() - t0) / dur));
+    const lerp = (a, b) => Math.round(a + (b - a) * k);
+    win.setBounds({ x: lerp(from.x, to.x), y: lerp(from.y, to.y), width: lerp(from.width, to.width), height: lerp(from.height, to.height) });
+    if (k >= 1) {
+      clearInterval(timer);
+      win.setMinimumSize(1024, 680);
+      if (process.env.AYRA_MAXIMIZE !== '0') win.maximize();
+    }
+  }, 15);
+}
+
 async function createWindow() {
+  splashing = !process.argv.includes('--hidden') && process.env.AYRA_SPLASH !== '0';
+  grown = !splashing;
   win = new BrowserWindow({
-    width: 1440,
-    height: 900,
-    minWidth: 1024,
-    minHeight: 680,
+    width: splashing ? SPLASH.width : 1440,
+    height: splashing ? SPLASH.height : 900,
+    center: true,
+    resizable: !splashing,
+    ...(splashing ? {} : { minWidth: 1024, minHeight: 680 }),
     title: 'Ayra Design',
     backgroundColor: '#0b0c10',
     icon: fs.existsSync(ICON) ? nativeImage.createFromPath(ICON) : undefined,
@@ -66,7 +95,12 @@ async function createWindow() {
     },
   });
   Menu.setApplicationMenu(null);
-  win.once('ready-to-show', () => { if (process.argv.includes('--hidden')) return; win.show(); if (process.env.AYRA_MAXIMIZE !== '0') win.maximize(); });
+  win.once('ready-to-show', () => {
+    if (process.argv.includes('--hidden')) return;
+    win.show();
+    if (splashing) setTimeout(growWindow, 9000); // güvenlik: arayüz istemese de büyü
+    else if (process.env.AYRA_MAXIMIZE !== '0') win.maximize();
+  });
 
   // dış bağlantılar sistem tarayıcısında açılsın; yazdırma pencerelerine izin ver
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -114,6 +148,7 @@ async function createWindow() {
 
 function showWindow() {
   if (!win) return createWindow();
+  growWindow();
   if (win.isMinimized()) win.restore();
   win.show();
   win.focus();
@@ -196,6 +231,7 @@ ipcMain.handle('ayra:setServer', async (e, url) => {
 });
 ipcMain.handle('ayra:appInfo', () => ({ version: app.getVersion(), packaged: app.isPackaged, update: updateState, closeToTray: readConfig().closeToTray !== false, openAtLogin: !!app.getLoginItemSettings().openAtLogin }));
 ipcMain.on('ayra:checkUpdates', () => checkUpdates(true));
+ipcMain.on('ayra:introGrow', () => growWindow());
 ipcMain.on('ayra:fullscreen', (e, on) => { if (win) win.setFullScreen(!!on); });
 ipcMain.on('ayra:installUpdate', installUpdate);
 ipcMain.on('ayra:zoom', (e, f) => { const z = Math.max(0.7, Math.min(1.5, Number(f) || 1)); if (win) win.webContents.setZoomFactor(z); });

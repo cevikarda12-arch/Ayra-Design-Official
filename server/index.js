@@ -57,6 +57,7 @@ const COLLECTIONS = {
   milestones: { scoped: true, label: 'Kilometre Taşı', title: 'title' },
   builds: { scoped: true, label: 'Sürüm', title: 'version' },
   assets: { scoped: true, label: 'Varlık', title: 'name' },
+  cork: { scoped: true, label: 'Pano öğesi' },
 };
 
 // ---------------------------------------------------------------------------

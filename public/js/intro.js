@@ -79,12 +79,15 @@
   A.playIntro = function (skipAnim) {
     return new Promise((resolve) => {
       const intro = document.getElementById('intro');
-      if (skipAnim) { intro.remove(); return resolve(); }
+      const grow = () => { if (window.ayraDesktop && window.ayraDesktop.introGrow) window.ayraDesktop.introGrow(); };
+      if (skipAnim) { intro.remove(); grow(); return resolve(); }
+      const growTimer = setTimeout(grow, 2700); // logo ve yazı belirdikten sonra pencere büyür
       A.syncTitleBar && A.syncTitleBar();
       const stop = A.particles(document.getElementById('introCanvas'), { count: 140, converge: true, links: true });
       let done = false;
       const finish = () => {
         if (done) return; done = true;
+        clearTimeout(growTimer); grow();
         intro.classList.add('out');
         setTimeout(() => { stop(); intro.remove(); A.syncTitleBar && A.syncTitleBar(); }, 1000);
         setTimeout(resolve, 350);
