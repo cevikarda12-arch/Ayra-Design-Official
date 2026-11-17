@@ -533,3 +533,5 @@ mark { background: rgba(255, 212, 59, .35); color: inherit; border-radius: 3px; 
   .ig-slots { grid-template-columns: 1fr 1fr; }
   .td-side { border-left: 0; padding-left: 0; }
 }
+.px-stage { position: relative; }
+.px-empty { position: absolute; inset: 0; display: grid; place-items: center; }

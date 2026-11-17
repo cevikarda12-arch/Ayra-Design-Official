@@ -220,7 +220,8 @@
         A.$('#pName', el).textContent = sp ? sp.name : 'Sprite yok';
         if (sp) { sp.frames = sp.frames && sp.frames.length ? sp.frames : [new Array(sp.w * sp.h).fill('')]; fpsIn.value = sp.fps || 8; A.$('#pFpsV', el).textContent = (sp.fps || 8) + ' fps'; drawPrev(sp.frames[0]); }
         drawList(); draw(); drawFrames();
-        if (!sp && A.can('create')) A.$('#pStage', el).insertAdjacentHTML('beforeend', '');
+        const old = A.$('.px-empty', el); if (old) old.remove();
+        if (!sp) { A.$('#pStage', el).insertAdjacentHTML('beforeend', `<div class="px-empty">${A.emptyState('grid-3x3', 'Henüz sprite yok', A.can('create') ? 'Sol üstteki + ile ilk spriteınızı oluşturun.' : '')}</div>`); A.icons(A.$('#pStage', el)); }
       };
       const onKey = (e) => {
         if (e.target.closest('input,textarea,select') || A.$('.modal-back') || !sp) return;
