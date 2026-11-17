@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('ayraDesktop', {
   setTitleBar: (color, symbolColor) => ipcRenderer.send('ayra:titlebar', { color, symbolColor }),
   setZoom: (f) => ipcRenderer.send('ayra:zoom', f),
   introGrow: () => ipcRenderer.send('ayra:introGrow'),
+  splashPlayed: (() => { try { return !!ipcRenderer.sendSync('ayra:splashInfo').played; } catch { return false; } })(),
   setFullScreen: (on) => ipcRenderer.send('ayra:fullscreen', on),
   appInfo: () => ipcRenderer.invoke('ayra:appInfo'),
   checkUpdates: () => ipcRenderer.send('ayra:checkUpdates'),

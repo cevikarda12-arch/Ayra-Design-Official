@@ -41,41 +41,56 @@ async function targetUrl() {
   return startLocalServer();
 }
 
-// ---------------------------------------------------------------- açılış: küçük pencere -> büyüme
-const SPLASH = { width: 640, height: 440 };
-let splashing = false;
-let grown = true;
-function growWindow() {
-  if (!win || grown) return;
-  grown = true;
-  const from = win.getBounds();
-  const wa = screen.getDisplayMatching(from).workArea;
-  const to = { x: wa.x, y: wa.y, width: wa.width, height: wa.height };
-  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-  const dur = 750, t0 = Date.now();
-  win.setResizable(true);
-  const timer = setInterval(() => {
-    if (!win || win.isDestroyed()) return clearInterval(timer);
-    const k = ease(Math.min(1, (Date.now() - t0) / dur));
-    const lerp = (a, b) => Math.round(a + (b - a) * k);
-    win.setBounds({ x: lerp(from.x, to.x), y: lerp(from.y, to.y), width: lerp(from.width, to.width), height: lerp(from.height, to.height) });
-    if (k >= 1) {
-      clearInterval(timer);
-      win.setMinimumSize(1024, 680);
-      if (process.env.AYRA_MAXIMIZE !== '0') win.maximize();
-    }
-  }, 15);
+// ---------------------------------------------------------------- açılış ekranı
+// Ekranı kaplayan şeffaf bir pencerede yuvarlak köşeli küçük bir kart açılır; logo belirdikten sonra
+// kart ekran kartı (GPU) animasyonuyla büyüyerek ekranı kaplar. Asıl pencere arkada hazırlanır ve
+// kart tamamen büyüdüğünde görünür olur — işletim sistemi pencere boyutlandırması kullanılmaz, takılma olmaz.
+let splashWin = null;
+let splashDone = true;
+let mainReady = false;
+let revealed = false;
+function revealMain() {
+  if (revealed || !win || !splashDone || !mainReady) return;
+  revealed = true;
+  if (!process.argv.includes('--hidden')) {
+    win.show();
+    if (process.env.AYRA_MAXIMIZE !== '0') win.maximize();
+  }
+  if (splashWin) {
+    const s = splashWin;
+    splashWin = null;
+    setTimeout(() => { if (!s.isDestroyed()) s.close(); }, 350);
+  }
 }
+function createSplash() {
+  const wa = screen.getPrimaryDisplay().workArea;
+  splashDone = false;
+  splashWin = new BrowserWindow({
+    x: wa.x, y: wa.y, width: wa.width, height: wa.height,
+    frame: false, transparent: true, resizable: false, movable: false, hasShadow: false,
+    alwaysOnTop: true, show: false, backgroundColor: '#00000000', title: 'Ayra Design',
+    icon: fs.existsSync(ICON) ? nativeImage.createFromPath(ICON) : undefined,
+    webPreferences: { preload: path.join(__dirname, 'splash-preload.js'), contextIsolation: true, sandbox: true },
+  });
+  splashWin.loadFile(path.join(__dirname, 'splash.html'));
+  splashWin.once('ready-to-show', () => { if (splashWin) splashWin.show(); });
+  splashWin.on('closed', () => { if (splashWin) { splashWin = null; splashDone = true; revealMain(); } });
+  setTimeout(() => { splashDone = true; revealMain(); }, 10000); // güvenlik
+}
+ipcMain.on('ayra:splashDone', () => { splashDone = true; revealMain(); });
+ipcMain.on('ayra:splashInfo', (e) => { e.returnValue = { played: !!usedSplash }; });
+let usedSplash = false;
 
 async function createWindow() {
-  splashing = !process.argv.includes('--hidden') && process.env.AYRA_SPLASH !== '0';
-  grown = !splashing;
+  const wantSplash = !process.argv.includes('--hidden') && process.env.AYRA_SPLASH !== '0' && readConfig().splash !== false;
+  usedSplash = wantSplash;
+  if (wantSplash) createSplash();
   win = new BrowserWindow({
-    width: splashing ? SPLASH.width : 1440,
-    height: splashing ? SPLASH.height : 900,
+    width: 1440,
+    height: 900,
     center: true,
-    resizable: !splashing,
-    ...(splashing ? {} : { minWidth: 1024, minHeight: 680 }),
+    minWidth: 1024,
+    minHeight: 680,
     title: 'Ayra Design',
     backgroundColor: '#0b0c10',
     icon: fs.existsSync(ICON) ? nativeImage.createFromPath(ICON) : undefined,
@@ -95,12 +110,7 @@ async function createWindow() {
     },
   });
   Menu.setApplicationMenu(null);
-  win.once('ready-to-show', () => {
-    if (process.argv.includes('--hidden')) return;
-    win.show();
-    if (splashing) setTimeout(growWindow, 9000); // güvenlik: arayüz istemese de büyü
-    else if (process.env.AYRA_MAXIMIZE !== '0') win.maximize();
-  });
+  win.once('ready-to-show', () => { mainReady = true; revealMain(); });
 
   // dış bağlantılar sistem tarayıcısında açılsın; yazdırma pencerelerine izin ver
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -148,7 +158,6 @@ async function createWindow() {
 
 function showWindow() {
   if (!win) return createWindow();
-  growWindow();
   if (win.isMinimized()) win.restore();
   win.show();
   win.focus();
@@ -231,12 +240,13 @@ ipcMain.handle('ayra:setServer', async (e, url) => {
 });
 ipcMain.handle('ayra:appInfo', () => ({ version: app.getVersion(), packaged: app.isPackaged, update: updateState, closeToTray: readConfig().closeToTray !== false, openAtLogin: !!app.getLoginItemSettings().openAtLogin }));
 ipcMain.on('ayra:checkUpdates', () => checkUpdates(true));
-ipcMain.on('ayra:introGrow', () => growWindow());
+ipcMain.on('ayra:introGrow', () => {}); // eski sürümlerle uyum
 ipcMain.on('ayra:fullscreen', (e, on) => { if (win) win.setFullScreen(!!on); });
 ipcMain.on('ayra:installUpdate', installUpdate);
 ipcMain.on('ayra:zoom', (e, f) => { const z = Math.max(0.7, Math.min(1.5, Number(f) || 1)); if (win) win.webContents.setZoomFactor(z); });
 ipcMain.on('ayra:setDesktopPref', (e, { key, value }) => {
   if (key === 'closeToTray') writeConfig({ ...readConfig(), closeToTray: !!value });
+  if (key === 'splash') writeConfig({ ...readConfig(), splash: !!value });
   if (key === 'openAtLogin') app.setLoginItemSettings({ openAtLogin: !!value, args: ['--hidden'] });
   if (tray) tray.setContextMenu(buildTrayMenu());
 });

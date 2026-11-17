@@ -12,27 +12,12 @@
   ];
 
   A.register('dashboard', {
-    title: 'Pano', icon: 'layout-dashboard', group: 'genel', full: true,
+    title: 'Pano', icon: 'layout-dashboard', group: 'genel',
     async render(el) {
-      const mode = A.ls.get('dashMode', 'cork');
-      el.innerHTML = `<div class="dash-switch"><div class="seg">
-          <button data-m="cork" class="${mode === 'cork' ? 'on' : ''}">${A.icon('pin')} Mantar Pano</button>
-          <button data-m="summary" class="${mode === 'summary' ? 'on' : ''}">${A.icon('layout-dashboard')} Özet</button></div>
-          ${A.project() ? `<span class="small muted">${A.esc(A.project().name)}</span>` : ''}</div>
-        <div class="dash-body ${mode}" id="dashBody"></div>`;
-      A.icons(el);
-      A.$$('.dash-switch [data-m]', el).forEach((b) => (b.onclick = () => { A.ls.set('dashMode', b.dataset.m); A.route(); }));
-      const body = A.$('#dashBody', el);
-      if (mode === 'cork') {
-        if (A.needProject(body)) return;
-        await A.renderCork(body);
-        this.destroy = () => body._ckCleanup && body._ckCleanup();
-        return;
-      }
+      if (this.destroy) try { this.destroy(); } catch {}
       this.destroy = null;
-      const inner = A.h('<div class="view-inner"></div>');
-      body.appendChild(inner);
-      return this.renderSummary(inner);
+      await this.renderSummary(el);
+      if (A.dashExtras && A.$('.dash-grid', el)) this.destroy = A.dashExtras(el) || null;
     },
     async renderSummary(el) {
       const u = A.state.user;

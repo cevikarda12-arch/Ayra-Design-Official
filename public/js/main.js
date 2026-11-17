@@ -17,6 +17,7 @@
       const prefs = me.user.prefs || {};
       A.applyAppearance(prefs);
       A.ls.set('intro', prefs.intro !== false);
+      if (window.ayraDesktop && window.ayraDesktop.setDesktopPref) window.ayraDesktop.setDesktopPref('splash', prefs.intro !== false);
       const animate = prefs.animations !== false;
       const welcome = animate && opts.welcome ? A.playWelcome(me.user, opts.welcome) : null;
       if (welcome) await new Promise((r) => setTimeout(r, 950)); // dairesel geçiş ekranı kaplasın
@@ -111,7 +112,8 @@
     if (ap) try { A.applyAppearance(ap); } catch {}
     const token = A.ls.get('token') || sessionStorage.getItem('ayra.token');
     const statusP = A.get('/api/status').catch(() => ({}));
-    await A.playIntro(A.ls.get('intro', true) === false);
+    // masaüstünde açılış animasyonu ayrı açılış penceresinde oynadıysa tekrar oynatma
+    await A.playIntro(A.ls.get('intro', true) === false || !!(window.ayraDesktop && window.ayraDesktop.splashPlayed));
     A.state.status = await statusP;
     if (token) {
       A.state.token = token;

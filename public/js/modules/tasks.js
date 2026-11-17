@@ -50,7 +50,8 @@
         const cl = t.checklist || [];
         const cld = cl.filter((c) => c.done).length;
         const cat = t.category ? `<span class="tcat" style="--c:${CATS[t.category] || '#868e96'}">${A.esc(t.category)}</span>` : '';
-        return `<div class="tcard" draggable="${A.canEdit(t)}" data-id="${t.id}">
+        const imp = t.important || (t.tags || []).includes('önemli');
+        return `<div class="tcard ${imp ? 'important' : ''}" draggable="${A.canEdit(t)}" data-id="${t.id}">${imp ? '<div class="imp-flag">❗ ÖNEMLİ</div>' : ''}
           <div class="row" style="gap:6px;margin-bottom:6px">${cat}<span class="spacer"></span><span class="prio p-${t.priority}" title="${PRIO[t.priority] ? PRIO[t.priority][0] : ''}"></span></div>
           <div class="tc-title">${A.esc(t.title)}</div>
           ${(t.tags || []).length ? `<div class="row wrap" style="gap:4px;margin-top:6px">${t.tags.map((x) => `<span class="tag">#${A.esc(x)}</span>`).join('')}</div>` : ''}
