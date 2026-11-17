@@ -27,11 +27,42 @@
       const hour = new Date().getHours();
       const greet = hour < 6 ? 'İyi geceler' : hour < 12 ? 'Günaydın' : hour < 18 ? 'İyi günler' : 'İyi akşamlar';
       A.toast(`${greet}, ${me.user.displayName}!`, 'ok', 'Hoş geldin');
+      if (me.user.mustChangePassword) forcePasswordChange();
     } catch (e) {
       console.error(e);
       A.logout(e.status === 401 ? true : false);
     }
   };
+
+  // Varsayılan / geçici şifreyle giriş yapıldıysa yeni şifre belirlemek zorunludur
+  function forcePasswordChange() {
+    A.modal({
+      title: 'Yeni şifre belirleyin', icon: 'key-round', closable: false,
+      body: `<p style="margin-top:0">Güvenliğiniz için geçici/varsayılan şifreyi değiştirmeniz gerekiyor. Bu adımdan sonra uygulamayı kullanmaya devam edebilirsiniz.</p>
+        <div class="field"><label>Yeni şifre</label><input class="input" type="password" id="fpNew" autocomplete="new-password" placeholder="En az 6 karakter"></div>
+        <div class="field"><label>Yeni şifre (tekrar)</label><input class="input" type="password" id="fpNew2" autocomplete="new-password"></div>
+        <div id="fpErr" class="small" style="color:var(--red)"></div>`,
+      foot: `<button class="btn ghost" id="fpOut">${A.icon('log-out')} Çıkış</button><span class="spacer"></span><button class="btn primary" id="fpSave">${A.icon('check')} Şifreyi kaydet</button>`,
+      onOpen: (m) => {
+        const err = (t) => { A.$('#fpErr', m.el).textContent = t; };
+        A.$('#fpOut', m.el).onclick = () => { m.close(); A.logout(); };
+        const save = async () => {
+          const a = A.$('#fpNew', m.el).value, b = A.$('#fpNew2', m.el).value;
+          if (a.length < 6) return err('Şifre en az 6 karakter olmalı.');
+          if (a !== b) return err('Şifreler eşleşmiyor.');
+          try {
+            await A.put('/api/me/password', { next: a });
+            A.state.user.mustChangePassword = false;
+            m.close();
+            A.toast('Şifreniz güncellendi. Artık hazırsınız! 🎉', 'ok');
+            A.confetti(60);
+          } catch (e) { err(e.message); }
+        };
+        A.$('#fpSave', m.el).onclick = save;
+        A.$('#fpNew2', m.el).onkeydown = (e) => { if (e.key === 'Enter') save(); };
+      },
+    });
+  }
 
   window.addEventListener('hashchange', () => A.route());
 

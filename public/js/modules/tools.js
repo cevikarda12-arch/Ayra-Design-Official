@@ -172,7 +172,7 @@
       <div class="card" style="margin-top:16px"><div class="card-title">${A.icon('swatch-book')} Kayıtlı paletler</div><div id="pSaved" class="grid auto"></div></div>`;
     const hsl2hex = (h, s, l) => { s /= 100; l /= 100; const k = (n) => (n + h / 30) % 12; const a = s * Math.min(l, 1 - l); const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); return '#' + [f(0), f(8), f(4)].map((x) => Math.round(x * 255).toString(16).padStart(2, '0')).join(''); };
     const hex2hsl = (hex) => { let r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, bl = parseInt(hex.slice(5, 7), 16) / 255; const mx = Math.max(r, g, bl), mn = Math.min(r, g, bl); let h = 0, s = 0; const l = (mx + mn) / 2; if (mx !== mn) { const d = mx - mn; s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (g - bl) / d + (g < bl ? 6 : 0) : mx === g ? (bl - r) / d + 2 : (r - g) / d + 4; h *= 60; } return [h, s * 100, l * 100]; };
-    const lum = (hex) => { const [, , l] = hex2hsl(hex); return l; };
+    const lum = (hex) => { const n = parseInt(hex.slice(1), 16); return ((0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255) * 100; };
     const gen = () => {
       const [h, s, l] = hex2hsl(A.$('#pBase', b).value);
       const mode = A.$('#pMode', b).value;
@@ -190,7 +190,7 @@
     };
     const draw = () => {
       const out = A.$('#pOut', b);
-      out.innerHTML = cols.map((c, i) => `<div class="pal-c" style="background:${c};color:${lum(c) > 60 ? '#111' : '#fff'}"><button class="pal-lock" data-l="${i}">${A.icon(locked.has(i) ? 'lock' : 'unlock')}</button><input type="color" value="${c}" data-i="${i}"><b data-copy="${c}">${c.toUpperCase()}</b></div>`).join('');
+      out.innerHTML = cols.map((c, i) => `<div class="pal-c" style="background:${c};color:${lum(c) > 62 ? '#111' : '#fff'}"><button class="pal-lock" data-l="${i}">${A.icon(locked.has(i) ? 'lock' : 'unlock')}</button><input type="color" value="${c}" data-i="${i}"><b data-copy="${c}">${c.toUpperCase()}</b></div>`).join('');
       A.icons(out);
       A.$$('[data-l]', out).forEach((x) => (x.onclick = () => { const i = +x.dataset.l; locked.has(i) ? locked.delete(i) : locked.add(i); draw(); }));
       A.$$('[data-i]', out).forEach((x) => (x.oninput = () => { cols[+x.dataset.i] = x.value; x.parentElement.style.background = x.value; x.nextElementSibling.textContent = x.value.toUpperCase(); }));

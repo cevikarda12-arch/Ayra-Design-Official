@@ -322,10 +322,10 @@
     ['chat:message', 'chat:updated', 'chat:deleted', 'chat:typing', 'room:created', 'room:updated', 'room:deleted', 'draw:stroke', 'draw:update', 'draw:remove', 'draw:clear', 'draw:cursor'].forEach((ev) => s.on(ev, (d) => A.emit(ev, d)));
     s.on('chat:message', (m) => {
       if (m.userId === A.state.user.id) return;
-      const inRoom = A.current && A.current.id === 'chat' && A.chatRoomId === m.roomId && !document.hidden;
+      const inChat = A.current && A.current.id === 'chat';
+      const inRoom = inChat && A.chatRoomId === m.roomId && !document.hidden;
       if (!inRoom) {
-        A.unread.chat++;
-        renderNav();
+        if (!inChat) { A.unread.chat++; renderNav(); }
         A.sound('msg');
         if (window.ayraDesktop && document.hidden) window.ayraDesktop.notify(A.user(m.userId).displayName, m.text || 'Dosya gönderdi');
       }

@@ -44,6 +44,20 @@ async function test(name, fn) {
     assert.strictEqual(r.data.user.role, 'admin');
     assert.ok(r.data.perms.includes('manage_users') && r.data.perms.includes('manage_system'));
     admin = r.data.token;
+    assert.strictEqual(r.data.user.mustChangePassword, true, 'varsayılan şifre değiştirilmeli');
+  });
+
+  await test('ilk girişte zorunlu şifre değişimi', async () => {
+    const same = await req('PUT', '/api/me/password', { next: 'Ayra2026!' }, admin);
+    assert.strictEqual(same.status, 400, 'aynı şifre kabul edilmemeli');
+    const r = await req('PUT', '/api/me/password', { next: 'YeniAdmin123!' }, admin);
+    assert.strictEqual(r.status, 200);
+    const me = await req('GET', '/api/me', undefined, admin);
+    assert.strictEqual(me.data.user.mustChangePassword, false);
+    const old = await req('POST', '/api/auth/login', { username: 'admin', password: 'Ayra2026!' });
+    assert.strictEqual(old.status, 401);
+    const bad = await req('PUT', '/api/me/password', { current: 'yanlis', next: 'baska12345' }, admin);
+    assert.strictEqual(bad.status, 400, 'artık mevcut şifre zorunlu');
   });
 
   await test('yanlış şifre reddedilir', async () => {

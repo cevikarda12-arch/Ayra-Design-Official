@@ -111,6 +111,7 @@ function createServer(options = {}) {
       out.email = u.email || '';
       out.prefs = u.prefs || {};
       out.signupNote = u.signupNote || '';
+      out.mustChangePassword = !!u.mustChangePassword;
     }
     return out;
   }
@@ -256,9 +257,10 @@ function createServer(options = {}) {
 
   app.put('/api/me/password', auth, wrap((req, res) => {
     const { current, next } = req.body || {};
-    if (!bcrypt.compareSync(String(current || ''), req.user.passwordHash)) return res.status(400).json({ error: 'Mevcut şifre hatalı.' });
+    if (!req.user.mustChangePassword && !bcrypt.compareSync(String(current || ''), req.user.passwordHash)) return res.status(400).json({ error: 'Mevcut şifre hatalı.' });
     if (typeof next !== 'string' || next.length < 6) return res.status(400).json({ error: 'Yeni şifre en az 6 karakter olmalı.' });
-    db.update('users', req.user.id, { passwordHash: bcrypt.hashSync(next, 10) });
+    if (bcrypt.compareSync(next, req.user.passwordHash)) return res.status(400).json({ error: 'Yeni şifre eskisiyle aynı olamaz.' });
+    db.update('users', req.user.id, { passwordHash: bcrypt.hashSync(next, 10), mustChangePassword: false });
     // diğer oturumları kapat
     const keep = hashToken(req.token);
     db.removeWhere('sessions', (s) => s.userId === req.user.id && s.tokenHash !== keep);
@@ -333,7 +335,7 @@ function createServer(options = {}) {
     const u = db.insert('users', {
       username, displayName: cleanStr(req.body.displayName, 40) || username, email: cleanStr(req.body.email, 120),
       title: cleanStr(req.body.title, 60), passwordHash: bcrypt.hashSync(password, 10), role, status: 'active',
-      avatarColor: '#4dabf7', prefs: {}, approvedBy: req.user.id, approvedAt: Date.now(),
+      avatarColor: '#4dabf7', prefs: {}, approvedBy: req.user.id, approvedAt: Date.now(), mustChangePassword: true,
     });
     logActivity(req.user.id, `${u.displayName} kullanıcısını oluşturdu`, { kind: 'admin' });
     io.emit('user:updated', publicUser(u));
@@ -374,7 +376,7 @@ function createServer(options = {}) {
     if (u.role === 'admin' && req.user.role !== 'admin') return res.status(403).json({ error: 'Yetkiniz yok.' });
     const pw = String(req.body.password || '');
     if (pw.length < 6) return res.status(400).json({ error: 'Şifre en az 6 karakter olmalı.' });
-    db.update('users', u.id, { passwordHash: bcrypt.hashSync(pw, 10) });
+    db.update('users', u.id, { passwordHash: bcrypt.hashSync(pw, 10), mustChangePassword: true });
     db.removeWhere('sessions', (s) => s.userId === u.id);
     io.to('user:' + u.id).emit('force:logout', 'Şifreniz yönetici tarafından sıfırlandı.');
     logActivity(req.user.id, `${u.displayName} kullanıcısının şifresini sıfırladı`, { kind: 'admin' });

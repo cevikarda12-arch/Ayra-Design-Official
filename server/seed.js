@@ -34,6 +34,7 @@ function seed(db, bcrypt) {
     passwordHash: bcrypt.hashSync(DEFAULT_ADMIN.password, 10),
     role: 'admin',
     status: 'active',
+    mustChangePassword: !process.env.AYRA_ADMIN_PASSWORD,
     avatarColor: '#9b87f5',
     skills: ['Oyun Tasarımı', 'Yönetim'],
     prefs: { theme: 'dark', accent: '#9b87f5', intro: true, sounds: true },
